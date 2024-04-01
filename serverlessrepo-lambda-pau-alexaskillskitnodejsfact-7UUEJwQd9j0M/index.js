@@ -27,6 +27,7 @@ const LaunchRequestHandler = {
         if(primeraVez)
         {
             speakOutput = 'Bienvenido a "Pausa Adolescente", soy tu compañero terapeútico. Antes de empezar, ¿Cúal es tu nombre?';
+            await bbdd.createUser('prueba0', 'rosa');
 
         }
         else
