@@ -13,6 +13,7 @@ let generoAdolescente ='masculino';
 
 // ******************* FUNCIONES AUXILIARES *******************
 const functions = require('./functions');
+const bbdd = require('./bbdd');
 
 
 // Manejador de inicio
