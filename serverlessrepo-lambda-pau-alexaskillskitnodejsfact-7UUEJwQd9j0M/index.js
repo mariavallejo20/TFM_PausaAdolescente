@@ -23,11 +23,14 @@ const LaunchRequestHandler = {
     },
     async handle(handlerInput) {
         let speakOutput = '';
+
+        const userId = handlerInput.requestEnvelope.context.System.user.userId;
+        const usuario = await bbdd.getUserById(userId);
         
-        if(primeraVez)
+        if(!usuario)
         {
-            speakOutput = 'Bienvenido a "Pausa Adolescente", soy tu compañero terapeútico. Antes de empezar, ¿Cúal es tu nombre?';
-            await bbdd.createUser('prueba0', 'rosa');
+            speakOutput = `Bienvenido a "Pausa Adolescente", soy tu compañero terapeútico. Antes de empezar, ¿Cúal es tu nombre?`;
+            await bbdd.createUser(userId);
 
         }
         else
