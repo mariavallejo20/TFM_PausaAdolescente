@@ -1,15 +1,11 @@
-/* *
- * This sample demonstrates handling intents from an Alexa skill using the Alexa Skills Kit SDK (v2).
- * Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
- * session persistence, api calls, and more.
- * */
+
 const Alexa = require('ask-sdk-core');
 
-// Variable de prueba para determinar si es o no la primera vez del adolescente
-let primeraVez = true;
+// Constante para alamcenar el género del adolescente
+let GENEROADOLESCENTE = '';
 
-// Variable para guardar el género del adolescente (por defecto masculino)
-let generoAdolescente ='masculino';
+// Constante para almacenar el idUsuario del adolescente
+let USERID = '';
 
 // ******************* FUNCIONES AUXILIARES *******************
 const functions = require('./functions');
@@ -24,23 +20,28 @@ const LaunchRequestHandler = {
     async handle(handlerInput) {
         let speakOutput = '';
 
-        const userId = handlerInput.requestEnvelope.context.System.user.userId;
-        const usuario = await bbdd.getUserById(userId);
+        USERID = handlerInput.requestEnvelope.context.System.user.userId;
+
+        // Comprobamos si el usuario está registrado en función del idUsuario
+        const usuario = await bbdd.getUsuario(USERID);
         
+        // Si no está registrado, creamos el usuario
         if(!usuario)
         {
             speakOutput = `Bienvenido a "Pausa Adolescente", soy tu compañero terapeútico. Antes de empezar, ¿Cúal es tu nombre?`;
-            await bbdd.createUser(userId);
+            await bbdd.crearUsuario(USERID);
 
         }
         else
         {
             // Establecemos la respuesta según el género
             let sentimientosGenero;
+
+            GENEROADOLESCENTE = await bbdd.getGeneroUsuario(USERID);
             
-            if (generoAdolescente === 'masculino')
+            if (GENEROADOLESCENTE === 'masculino')
                 sentimientosGenero = 'Feliz, Triste, Estresado, Motivado o Agotado.';
-            else if (generoAdolescente === 'femenino')
+            else if (GENEROADOLESCENTE === 'femenino')
                 sentimientosGenero = 'Feliz, Triste, Estresada, Motivada o Agotada.';
                 
             speakOutput = `¡Hola de nuevo! <break time="1s"/>¿Cómo te sientes hoy?: ${sentimientosGenero}`;
@@ -60,12 +61,16 @@ const obtenerNombreHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'obtenerNombre';
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         const nombreAdolescente = handlerInput.requestEnvelope.request.intent.slots.nombre.value;
         
         if (nombreAdolescente) {
             const speakOutput = `¡${nombreAdolescente}, qué nombre más bonito! Ahora necesito conocerte un poco más. Vamos con algunas preguntas: <break time="1s"/> ¿Cómo quieres que me dirija a ti?: en género masculino o femenino `;
-             return handlerInput.responseBuilder
+            
+            // Añadimos el nombre del usuario en fucnión del idUsuario
+            await bbdd.addNombreUsuario(USERID, nombreAdolescente);
+
+            return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .reprompt('Dime cómo te identificas: género masculino o femenino.')
                 .getResponse();
@@ -85,11 +90,15 @@ const obtenerGeneroHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'obtenerGenero';
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         generoAdolescente = handlerInput.requestEnvelope.request.intent.slots.genero.value;
         
         if (generoAdolescente) {
             const speakOutput = `¡${generoAdolescente}, de acuerdo! ¿Qué te gustaría conseguir utilizando "Pausa Adolescente"?`;
+
+            // Añadimos el género del usuario en fucnión del idUsuario
+            await bbdd.addGeneroUsuario(USERID, generoAdolescente);
+
             return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .reprompt('Dime cúal es tu objetivo al utiliza "Pausa Adolescente".')
@@ -110,11 +119,15 @@ const obtenerObjetivoHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'obtenerObjetivo';
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         const objetivoAdolescente = handlerInput.requestEnvelope.request.intent.slots.objetivo.value;
         
         if (objetivoAdolescente) {
             const speakOutput = `¡Seguro que lo conseguimos juntos! ¿Cuánto tiempo al día te gustaría dedicar a "Pausa Adolescente"?`;
+
+            // Añadimos el objetivo del usuario en fucnión del idUsuario
+            await bbdd.addObjetivoUsuario(USERID, objetivoAdolescente);
+
             return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .reprompt('Dime cuánto tiempo diario quieres dedicar a "Pausa Adolescente".')
@@ -135,22 +148,28 @@ const dedicacionDiariaHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'dedicacionDiaria';
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         const dedicacionDiariaAdolescente = handlerInput.requestEnvelope.request.intent.slots.tiempo.value;
 
         tiempoDia = functions.convertirDuracion(dedicacionDiariaAdolescente);
         
         // Establecemos la respuesta según el género
         let sentimientosGenero;
+
+        GENEROADOLESCENTE = await bbdd.getGeneroUsuario(USERID);
         
-        if (generoAdolescente === 'masculino')
+        if (GENEROADOLESCENTE === 'masculino')
             sentimientosGenero = 'Feliz, Triste, Estresado, Motivado o Agotado.';
-        else if (generoAdolescente === 'femenino')
+        else if (GENEROADOLESCENTE === 'femenino')
             sentimientosGenero = 'Feliz, Triste, Estresada, Motivada o Agotada.';
             
         
         if (dedicacionDiariaAdolescente) {
             const speakOutput = `¡${tiempoDia}, genial! Ya nos queda poco, ¿Cómo te sientes hoy?: ${sentimientosGenero} `;
+
+            // Añadimos el tiempo de uso del usuario en fucnión del idUsuario
+            await bbdd.addTiempoUsuario(USERID, tiempoDia);
+
             return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .reprompt(`Dime como te sientes: ${sentimientosGenero}.`)
@@ -171,11 +190,15 @@ const obtenerSentimientoDiaHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'obtenerSentimientoDia';
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         const sentimientoDia = handlerInput.requestEnvelope.request.intent.slots.sentimiento.value;
         
         if (sentimientoDia) {
             const speakOutput = `¡De acuerdo, añadiré ${sentimientoDia} a las estadísticas de la semana! <break time="1s"/> En una escala del 1 al 10, ¿Cuánta ansiedad o estrés experimentas en este momento? `;
+            
+            // Añadimos el sentimiendo del día del usuario en fucnión del idUsuario
+            await bbdd.addSentimientoDiaUsuario(USERID, sentimientoDia);
+            
             return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .reprompt('Dime cuanto estrés experimentas del 1 al 10.')
@@ -196,11 +219,15 @@ const nivelAnsiedadDiaHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'nivelAnsiedadDia';
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         const nivelAnsiedad = handlerInput.requestEnvelope.request.intent.slots.nivelAnsiedad.value;
         
         if (nivelAnsiedad) {
             const speakOutput = `${nivelAnsiedad}, entendido. Vamos a trabajar en ello juntos. <break time="1s"/> ¿Qué necesitas?: respiración, meditación, juego o terapia`;
+            
+            // Añadimos el nivel de ansiedad del usuario en fucnión del idUsuario
+            await bbdd.addnivelAnsiedadUsuario(USERID, nivelAnsiedad);
+            
             return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .reprompt('Dime qué necesitas: : respiración, meditación, juego o terapia.')
