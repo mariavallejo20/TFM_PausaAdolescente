@@ -175,6 +175,42 @@ async function getGeneroUsuario(idUsuario) {
     }
 }
 
+
+//*****************************************************************************************************************/
+//                              FUNCIONES PARA OBTENER SESIÓN DE RESPIRACIÓN
+//*****************************************************************************************************************/
+
+async function getSesionRespiracion() {
+    try {
+      // Obtiene un idSesion aleatorio
+      const randomId = Math.floor(Math.random() * 3); // 3 elementos en la tabla
+  
+      // Realiza una operación de consulta en la tabla para obtener el elemento con el idSesion aleatorio
+      const data = await dynamoDB.query({
+        TableName: 'SesionRespiracion',
+        KeyConditionExpression: 'idSesion = :id',
+        ExpressionAttributeValues: {
+          ':id': { N: randomId.toString() }
+        }
+      }).promise();
+  
+      // Obtiene los valores de inicio, refuerzo y final de la fila aleatoria
+      const inicio = data.Items[0].inicio.S;
+      const refuerzo = data.Items[0].refuerzo.S;
+      const final = data.Items[0].final.S;
+  
+      // Devuelve los valores como strings
+      return {
+        inicio: inicio,
+        refuerzo: refuerzo,
+        final: final
+      };
+    } catch (error) {
+      console.error("Error al obtener la sesión de respiración:", error);
+      throw error;
+    }
+}
+
 module.exports = {
     getUsuario,
     crearUsuario,
@@ -184,5 +220,7 @@ module.exports = {
     addTiempoUsuario,
     addSentimientoDiaUsuario,
     addnivelAnsiedadUsuario,
-    getGeneroUsuario
+    getGeneroUsuario,
+    getSesionRespiracion,
+    getSesionRespiracionPrueba
 };

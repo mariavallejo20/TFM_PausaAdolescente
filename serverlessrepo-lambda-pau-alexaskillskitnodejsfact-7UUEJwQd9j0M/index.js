@@ -242,6 +242,33 @@ const nivelAnsiedadDiaHandler = {
     }
 };
 
+// Manejador para obtener el nivel de ansiedad del día
+const sesionRespiracionHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'sesionRespiracion';
+    },
+    async handle(handlerInput) {
+        
+        // ! No funciona la llamada a la función
+        // ? Es posible que sea al cambiarla al archivo bbdd
+        // Obtiene los valores de inicio, refuerzo y final de la base de datos para una sesión de respiración aleatoria
+        // const sesion = await bbdd.getSesionRespiracionPrueba('A');
+        // const inicio = sesion.inicio;
+        // const refuerzo = sesion.refuerzo;
+        // const final = sesion.final;
+
+        const speakOutput = 'Esto es una sesión de respiración';
+        // Construye el mensaje con pausas para que el usuario pueda realizar cada parte del ejercicio
+        //const speakOutput = `¡Genial! Vamos con una sesión de respiración. ${inicio}. <break time="5s"/> ${refuerzo}. <break time="5s"/> ${final}.`;
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt('¿Te gustaría repetir la sesión o necesitas ayuda con algo más?')
+            .getResponse();
+    }
+};
+
 
 const HelpIntentHandler = {
     canHandle(handlerInput) {
@@ -359,6 +386,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         dedicacionDiariaHandler,
         obtenerSentimientoDiaHandler,
         nivelAnsiedadDiaHandler,
+        sesionRespiracionHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         FallbackIntentHandler,
