@@ -7,6 +7,9 @@ let GENEROADOLESCENTE = '';
 // Constante para almacenar el idUsuario del adolescente
 let USERID = '';
 
+// Constante para almacenar el nombre del adolescente
+let NOMBREADOLESCENTE = '';
+
 // ******************* FUNCIONES AUXILIARES *******************
 const functions = require('./functions');
 const bbdd = require('./bbdd');
@@ -38,13 +41,14 @@ const LaunchRequestHandler = {
             let sentimientosGenero;
 
             GENEROADOLESCENTE = await bbdd.getGeneroUsuario(USERID);
+            NOMBREADOLESCENTE = await bbdd.getNombreUsuario(USERID);
             
             if (GENEROADOLESCENTE === 'masculino')
                 sentimientosGenero = 'Feliz, Triste, Estresado, Motivado o Agotado.';
             else if (GENEROADOLESCENTE === 'femenino')
                 sentimientosGenero = 'Feliz, Triste, Estresada, Motivada o Agotada.';
                 
-            speakOutput = `¡Hola de nuevo! <break time="1s"/>¿Cómo te sientes hoy?: ${sentimientosGenero}`;
+            speakOutput = `¡Hola de nuevo, ${NOMBREADOLESCENTE}! <break time="1s"/>¿Cómo te sientes hoy?: ${sentimientosGenero}`;
         }
 
         return handlerInput.responseBuilder
@@ -69,6 +73,7 @@ const obtenerNombreHandler = {
             
             // Añadimos el nombre del usuario en fucnión del idUsuario
             await bbdd.addNombreUsuario(USERID, nombreAdolescente);
+            NOMBREADOLESCENTE = await bbdd.getNombreUsuario(USERID);
 
             return handlerInput.responseBuilder
                 .speak(speakOutput)
@@ -249,23 +254,55 @@ const sesionRespiracionHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'sesionRespiracion';
     },
     async handle(handlerInput) {
-        
-        // ! No funciona la llamada a la función
-        // ? Es posible que sea al cambiarla al archivo bbdd
+             
         // Obtiene los valores de inicio, refuerzo y final de la base de datos para una sesión de respiración aleatoria
-        // const sesion = await bbdd.getSesionRespiracionPrueba('A');
-        // const inicio = sesion.inicio;
-        // const refuerzo = sesion.refuerzo;
-        // const final = sesion.final;
+        const sesion = await bbdd.getSesionRespiracion();
 
-        const speakOutput = 'Esto es una sesión de respiración';
-        // Construye el mensaje con pausas para que el usuario pueda realizar cada parte del ejercicio
-        //const speakOutput = `¡Genial! Vamos con una sesión de respiración. ${inicio}. <break time="5s"/> ${refuerzo}. <break time="5s"/> ${final}.`;
+        const inicio = sesion.inicio;
+        const refuerzo = sesion.refuerzo;
+        const fin = sesion.fin;
+        //const urlMusica = sesion.musica;
 
+        let speakOutput = '';
+
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a una sesión de respiración guiada. ¡Espero que estés preparado, vamos a empezar! <break time="1s"/>`;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a una sesión de respiración guiada. ¡Espero que estés preparada, vamos a empezar! <break time="1s"/>`;
+
+        speakOutput += `<prosody rate="slow">${inicio}</prosody> <break time="10s"/> <break time="10s"/> <break time="10s"/>
+                        <prosody rate="slow">${refuerzo}</prosody> <break time="10s"/> <break time="10s"/> <break time="10s"/>
+                        <prosody rate="slow">${fin}</prosody> <break time="5s"/>`;
+
+        speakOutput += '¡Lo has hecho genial! Recuerda que siempre puedes volver a una "sesión de respiración" cuando necesites un momento de calma.';
+        
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt('¿Te gustaría repetir la sesión o necesitas ayuda con algo más?')
+            .reprompt('')
             .getResponse();
+
+        // ! La SKILL no reproduce el audio que se encuentra en S3
+
+        // Dirección de APL para la interfaz de reproducción de audio
+        // const audioDirective = {
+        //     type: 'Alexa.Presentation.APL.ExecuteCommands',
+        //     token: 'aplToken',
+        //     commands: [
+        //         {
+        //             "type": "ControlMedia",
+        //             "componentId": "audioPlayer",
+        //             "command": "play",
+        //             "audioTrack": "foreground",
+        //             "source": urlMusica,
+        //             "playBehavior": "ENQUEUE"
+        //         }
+        //     ]
+        // };
+
+        // ? Si se reproduce un audio base de alexa, pero no cualquier otro.
+        // return handlerInput.responseBuilder
+        //     .speak(`Reproduciendo audio... <audio src="https://drive.google.com/file/d/1WpXhmYuYPSYNStObkqYVu-321XKNFPBs/view?usp=sharing"/>`)
+        //     .getResponse();
     }
 };
 

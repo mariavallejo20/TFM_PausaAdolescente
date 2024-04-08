@@ -175,39 +175,45 @@ async function getGeneroUsuario(idUsuario) {
     }
 }
 
+// Función para obtener el género de un usuario a partir de su idUsuario
+async function getNombreUsuario(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            ProjectionExpression: 'nombre'
+        };
+        const data = await dynamoDB.get(params).promise();
+        return data.Item ? data.Item.nombre : null;
+    } catch (error) {
+        console.error('Error al obtener nombre del usuario en DynamoDB:', error);
+        throw error;
+    }
+}
+
 
 //*****************************************************************************************************************/
 //                              FUNCIONES PARA OBTENER SESIÓN DE RESPIRACIÓN
 //*****************************************************************************************************************/
 
 async function getSesionRespiracion() {
+    const randomSesion = Math.floor(Math.random() * 3);
+
     try {
-      // Obtiene un idSesion aleatorio
-      const randomId = Math.floor(Math.random() * 3); // 3 elementos en la tabla
-  
-      // Realiza una operación de consulta en la tabla para obtener el elemento con el idSesion aleatorio
-      const data = await dynamoDB.query({
-        TableName: 'SesionRespiracion',
-        KeyConditionExpression: 'idSesion = :id',
-        ExpressionAttributeValues: {
-          ':id': { N: randomId.toString() }
-        }
-      }).promise();
-  
-      // Obtiene los valores de inicio, refuerzo y final de la fila aleatoria
-      const inicio = data.Items[0].inicio.S;
-      const refuerzo = data.Items[0].refuerzo.S;
-      const final = data.Items[0].final.S;
-  
-      // Devuelve los valores como strings
-      return {
-        inicio: inicio,
-        refuerzo: refuerzo,
-        final: final
-      };
+        const params = {
+            TableName: 'SesionRespiracion',
+            Key: {
+                'idSesion': randomSesion
+            },
+            ProjectionExpression: 'inicio, refuerzo, fin, musica'
+        };
+        const data = await dynamoDB.get(params).promise();
+        return data.Item ? data.Item : null;
     } catch (error) {
-      console.error("Error al obtener la sesión de respiración:", error);
-      throw error;
+        console.error('Error al obtener sesión de respiración en DynamoDB:', error);
+        throw error;
     }
 }
 
@@ -221,6 +227,6 @@ module.exports = {
     addSentimientoDiaUsuario,
     addnivelAnsiedadUsuario,
     getGeneroUsuario,
-    getSesionRespiracion,
-    getSesionRespiracionPrueba
+    getNombreUsuario,
+    getSesionRespiracion
 };
