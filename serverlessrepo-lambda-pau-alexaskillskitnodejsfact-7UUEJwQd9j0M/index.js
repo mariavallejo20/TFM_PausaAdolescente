@@ -270,16 +270,25 @@ const sesionRespiracionHandler = {
         else if (GENEROADOLESCENTE == 'femenino')
             speakOutput += `${NOMBREADOLESCENTE}, bienvenida a una sesión de respiración guiada. ¡Espero que estés preparada, vamos a empezar! <break time="1s"/>`;
 
-        speakOutput += `<prosody rate="slow">${inicio}</prosody> <break time="10s"/> <break time="10s"/> <break time="10s"/>
-                        <prosody rate="slow">${refuerzo}</prosody> <break time="10s"/> <break time="10s"/> <break time="10s"/>
-                        <prosody rate="slow">${fin}</prosody> <break time="5s"/>`;
+        const speakOutputInicio = `<prosody rate="slow">${inicio}</prosody>`;
+        const speakOutputRefuerzo = `<prosody rate="slow">${refuerzo}</prosody>`;
+        const speakOutputFin = `<prosody rate="slow">${fin}</prosody> <break time="2s"/>`;
 
-        speakOutput += '¡Lo has hecho genial! Recuerda que siempre puedes volver a una "sesión de respiración" cuando necesites un momento de calma.';
+        // speakOutput += '¡Lo has hecho genial! Recuerda que siempre puedes volver a una "sesión de respiración" cuando necesites un momento de calma.';
         
+        // speakOutput += ;
+
+        // return handlerInput.responseBuilder
+        //     .speak(speakOutput)
+        //     .reprompt('')
+        //     .getResponse();
+
         return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt('')
-            .getResponse();
+        .speak(speakOutput)
+        .addAudioPlayerPlayDirective('REPLACE_ALL', 'https://sesionrespiracion.s3.eu-west-1.amazonaws.com/sesionRespiracion0.mp3', '0', 0, null)
+        .speak(speakOutputInicio)
+
+        .getResponse();
 
         // ! La SKILL no reproduce el audio que se encuentra en S3
 
