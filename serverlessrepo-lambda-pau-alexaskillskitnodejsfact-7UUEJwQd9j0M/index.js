@@ -287,9 +287,9 @@ const sesionRespiracionHandler = {
         let speakOutput = '';
 
         if (GENEROADOLESCENTE == 'masculino')
-            speakOutput += `¡Espero que estés preparado, vamos con una sesión de respiración ${duracion}! La sesión finalizará cuando se acabe la música. <break time="1s"/>`;
+            speakOutput += `¡Espero que estés preparado, vamos con una sesión de respiración ${duracion}! La sesión finalizará cuando se acabe la música o cuando digas: "Alexa para". <break time="1s"/>`;
         else if (GENEROADOLESCENTE == 'femenino')
-            speakOutput += `¡Espero que estés preparada, vamos con una sesión de respiración ${duracion}! La sesión finalizará cuando se acabe la música. <break time="1s"/>`;
+            speakOutput += `¡Espero que estés preparada, vamos con una sesión de respiración ${duracion}! La sesión finalizará cuando se acabe la música o cuando digas: "Alexa para". <break time="1s"/>`;
 
         speakOutput += `<prosody rate="slow">${sesion}</prosody>`;
 
@@ -301,6 +301,23 @@ const sesionRespiracionHandler = {
 
     }
 };
+
+const PauseIntentHandler = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.PauseIntent';
+    },
+    handle(handlerInput) {
+      // Aquí puedes agregar la lógica para pausar la reproducción de la sesión de respiración
+      // Puedes detener la reproducción de audio, guardar el progreso actual, etc.
+      const speechText = '¡Espero que hayas podido relajarte! Vuelve siempre que lo necesites.';
+  
+      return handlerInput.responseBuilder
+        .speak(speechText)
+        .withShouldEndSession(true) // La sesión finaliza cuando se acaba la música
+        .getResponse();
+    },
+  };
 
 const HelpIntentHandler = {
     canHandle(handlerInput) {
@@ -324,10 +341,11 @@ const CancelAndStopIntentHandler = {
                 || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
-        const speakOutput = '¡Adiós!';
+        const speakOutput = '¡Espero que hayas podido relajarte! Vuelve siempre que lo necesites.';
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
+            .withShouldEndSession(true)
             .getResponse();
     }
 };
@@ -420,6 +438,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         nivelAnsiedadDiaHandler,
         bienvenidaSesionRespiracionHandler,
         sesionRespiracionHandler,
+        PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         FallbackIntentHandler,
