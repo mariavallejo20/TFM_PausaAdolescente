@@ -302,6 +302,56 @@ const sesionRespiracionHandler = {
     }
 };
 
+// Manejador para dar la bienvenida a la meditación y elegir la temática deseada
+const bienvenidaSesionMeditacionHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaSesionMeditacion';
+    },
+    async handle(handlerInput) {
+
+        let speakOutput = '';
+
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .getResponse();
+
+    }
+};
+
+// Manejador para desarrollar la sesión de meditación
+const sesionMeditacionHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'sesionMeditacion';
+    },
+    async handle(handlerInput) {
+
+        const tema = handlerInput.requestEnvelope.request.intent.slots.tematicaMeditacion.value;
+
+        const sesion = await bbdd.getSesionMeditacion(tema);
+        const { inicio, refuerzo, fin } = sesion;
+
+        let speakOutput = `Genial, haremos una sesión de relajación sobre ${tema}. Antes de comenzar, asegúrate de estar en un lugar tranquilo donde puedas relajarte y estar en silencio. <break time="1s"/> Vamos a empezar: <break time="1s"/>`;
+
+        speakOutput += `<prosody rate="slow">${inicio}</prosody> <break time="10s"/> <break time="5s"/> `;
+        speakOutput += `<prosody rate="slow">${refuerzo}</prosody> <break time="10s"/> <break time="5s"/> `;
+        speakOutput += `<prosody rate="slow">${fin}</prosody> <break time="10s"/> <break time="5s"/> `;
+
+        speakOutput += 'Fin de la sesión de meditación. Recuerda que siempre puedes regresar a este lugar de tranquilidad en cualquier momento que lo necesites. La paz está dentro de ti, esperando ser encontrada cada vez que busques en tu interior.';
+        
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .getResponse();
+
+    }
+};
+
 const PauseIntentHandler = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
@@ -438,6 +488,8 @@ exports.handler = Alexa.SkillBuilders.custom()
         nivelAnsiedadDiaHandler,
         bienvenidaSesionRespiracionHandler,
         sesionRespiracionHandler,
+        bienvenidaSesionMeditacionHandler,
+        sesionMeditacionHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
