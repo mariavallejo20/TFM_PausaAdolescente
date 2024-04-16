@@ -7,6 +7,9 @@ let GENEROADOLESCENTE = '';
 // Constante para almacenar el idUsuario del adolescente
 let USERID = '';
 
+// Constante para almacenar el nombre del adolescente
+let NOMBREADOLESCENTE = '';
+
 // ******************* FUNCIONES AUXILIARES *******************
 const functions = require('./functions');
 const bbdd = require('./bbdd');
@@ -38,13 +41,14 @@ const LaunchRequestHandler = {
             let sentimientosGenero;
 
             GENEROADOLESCENTE = await bbdd.getGeneroUsuario(USERID);
+            NOMBREADOLESCENTE = await bbdd.getNombreUsuario(USERID);
             
             if (GENEROADOLESCENTE === 'masculino')
                 sentimientosGenero = 'Feliz, Triste, Estresado, Motivado o Agotado.';
             else if (GENEROADOLESCENTE === 'femenino')
                 sentimientosGenero = 'Feliz, Triste, Estresada, Motivada o Agotada.';
                 
-            speakOutput = `¡Hola de nuevo! <break time="1s"/>¿Cómo te sientes hoy?: ${sentimientosGenero}`;
+            speakOutput = `¡Hola de nuevo, ${NOMBREADOLESCENTE}! <break time="1s"/>¿Cómo te sientes hoy?: ${sentimientosGenero}`;
         }
 
         return handlerInput.responseBuilder
@@ -69,6 +73,7 @@ const obtenerNombreHandler = {
             
             // Añadimos el nombre del usuario en fucnión del idUsuario
             await bbdd.addNombreUsuario(USERID, nombreAdolescente);
+            NOMBREADOLESCENTE = await bbdd.getNombreUsuario(USERID);
 
             return handlerInput.responseBuilder
                 .speak(speakOutput)
@@ -91,7 +96,7 @@ const obtenerGeneroHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'obtenerGenero';
     },
     async handle(handlerInput) {
-        generoAdolescente = handlerInput.requestEnvelope.request.intent.slots.genero.value;
+        const generoAdolescente = handlerInput.requestEnvelope.request.intent.slots.genero.value;
         
         if (generoAdolescente) {
             const speakOutput = `¡${generoAdolescente}, de acuerdo! ¿Qué te gustaría conseguir utilizando "Pausa Adolescente"?`;
@@ -151,7 +156,7 @@ const dedicacionDiariaHandler = {
     async handle(handlerInput) {
         const dedicacionDiariaAdolescente = handlerInput.requestEnvelope.request.intent.slots.tiempo.value;
 
-        tiempoDia = functions.convertirDuracion(dedicacionDiariaAdolescente);
+        const tiempoDia = functions.convertirDuracion(dedicacionDiariaAdolescente);
         
         // Establecemos la respuesta según el género
         let sentimientosGenero;
@@ -242,6 +247,77 @@ const nivelAnsiedadDiaHandler = {
     }
 };
 
+// Manejador para dar la bienvenida a la sesión de respiración y obtener la duración
+const bienvenidaSesionRespiracionHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaSesionRespiracion';
+    },
+    async handle(handlerInput) {
+
+        let speakOutput = '';
+
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a una sesión de respiración guiada. Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"`;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a una sesión de respiración guiada. Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"`;
+
+        return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .reprompt('Dime qué necesitas: : respiración, meditación, juego o terapia.')
+                .getResponse();
+
+    }
+};
+
+
+// Manejador para desarrollar la sesión de respiración
+const sesionRespiracionHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'sesionRespiracion';
+    },
+    async handle(handlerInput) {
+
+        const duracion = handlerInput.requestEnvelope.request.intent.slots.duracion.value;
+
+        const sesion = await bbdd.getSesionRespiracion(duracion);
+        const urlMusica = await bbdd.getMusicaSesionRespiracion(duracion);
+
+        let speakOutput = '';
+
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `¡Espero que estés preparado, vamos con una sesión de respiración ${duracion}! La sesión finalizará cuando se acabe la música o cuando digas: "Alexa para". <break time="1s"/>`;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `¡Espero que estés preparada, vamos con una sesión de respiración ${duracion}! La sesión finalizará cuando se acabe la música o cuando digas: "Alexa para". <break time="1s"/>`;
+
+        speakOutput += `<prosody rate="slow">${sesion}</prosody>`;
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .addAudioPlayerPlayDirective('REPLACE_ALL', urlMusica, '0', 0, null)
+        .withShouldEndSession(true) // La sesión finaliza cuando se acaba la música
+        .getResponse();
+
+    }
+};
+
+const PauseIntentHandler = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.PauseIntent';
+    },
+    handle(handlerInput) {
+      // Aquí puedes agregar la lógica para pausar la reproducción de la sesión de respiración
+      // Puedes detener la reproducción de audio, guardar el progreso actual, etc.
+      const speechText = '¡Espero que hayas podido relajarte! Vuelve siempre que lo necesites.';
+  
+      return handlerInput.responseBuilder
+        .speak(speechText)
+        .withShouldEndSession(true) // La sesión finaliza cuando se acaba la música
+        .getResponse();
+    },
+  };
 
 const HelpIntentHandler = {
     canHandle(handlerInput) {
@@ -265,10 +341,11 @@ const CancelAndStopIntentHandler = {
                 || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
-        const speakOutput = '¡Adiós!';
+        const speakOutput = '¡Espero que hayas podido relajarte! Vuelve siempre que lo necesites.';
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
+            .withShouldEndSession(true)
             .getResponse();
     }
 };
@@ -359,6 +436,9 @@ exports.handler = Alexa.SkillBuilders.custom()
         dedicacionDiariaHandler,
         obtenerSentimientoDiaHandler,
         nivelAnsiedadDiaHandler,
+        bienvenidaSesionRespiracionHandler,
+        sesionRespiracionHandler,
+        PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         FallbackIntentHandler,

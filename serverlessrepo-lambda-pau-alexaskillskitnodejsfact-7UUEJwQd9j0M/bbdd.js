@@ -175,6 +175,68 @@ async function getGeneroUsuario(idUsuario) {
     }
 }
 
+// Función para obtener el género de un usuario a partir de su idUsuario
+async function getNombreUsuario(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            ProjectionExpression: 'nombre'
+        };
+        const data = await dynamoDB.get(params).promise();
+        return data.Item ? data.Item.nombre : null;
+    } catch (error) {
+        console.error('Error al obtener nombre del usuario en DynamoDB:', error);
+        throw error;
+    }
+}
+
+
+//*****************************************************************************************************************/
+//                              FUNCIONES PARA OBTENER SESIÓN DE RESPIRACIÓN
+//*****************************************************************************************************************/
+
+// Función para obtener la sesión de respiracion en función de la duración
+async function getSesionRespiracion(duracion) {
+    const params = {
+        TableName: 'SesionRespiracion',
+        FilterExpression: 'duracion = :duracion',
+        ProjectionExpression: 'sesion',
+        ExpressionAttributeValues: {
+            ':duracion': duracion
+        }
+    };
+
+    try {
+        const data = await dynamoDB.scan(params).promise();
+        return data.Items.length > 0 ? data.Items[0].sesion : null;
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+// Función independiente para consultar la base de datos
+async function getMusicaSesionRespiracion(duracion) {
+    const params = {
+        TableName: 'SesionRespiracion',
+        FilterExpression: 'duracion = :duracion',
+        ProjectionExpression: 'musica',
+        ExpressionAttributeValues: {
+            ':duracion': duracion
+        }
+    };
+
+    try {
+        const data = await dynamoDB.scan(params).promise();
+        return data.Items.length > 0 ? data.Items[0].musica : null;
+    } catch (error) {
+        throw error;
+    }
+}
+
 module.exports = {
     getUsuario,
     crearUsuario,
@@ -184,5 +246,8 @@ module.exports = {
     addTiempoUsuario,
     addSentimientoDiaUsuario,
     addnivelAnsiedadUsuario,
-    getGeneroUsuario
+    getGeneroUsuario,
+    getNombreUsuario,
+    getSesionRespiracion,
+    getMusicaSesionRespiracion
 };
