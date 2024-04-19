@@ -265,6 +265,36 @@ async function getSesionMeditacion(tema) {
     }
 }
 
+//*****************************************************************************************************************/
+//                                  FUNCIONES PARA OBETENER JUEGOS
+//*****************************************************************************************************************/
+
+async function getJuegoCategorias() {
+    const params = {
+        TableName: 'Juegos',
+        FilterExpression: 'tipo = :tipo',
+        ExpressionAttributeValues: {
+            ':tipo': 'categorias'
+        }
+    };
+
+    try {
+        const data = await dynamoDB.scan(params).promise();
+        if (data.Items.length > 0) {
+            // Seleccionar aleatoriamente una fila
+            const randomIndex = Math.floor(Math.random() * data.Items.length);
+            const { ejemplos, categoria } = data.Items[randomIndex];
+            return { ejemplos, categoria };
+        } else {
+            return null;
+        }
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+
 
 module.exports = {
     getUsuario,
@@ -279,5 +309,6 @@ module.exports = {
     getNombreUsuario,
     getSesionRespiracion,
     getMusicaSesionRespiracion,
-    getSesionMeditacion
+    getSesionMeditacion,
+    getJuegoCategorias
 };
