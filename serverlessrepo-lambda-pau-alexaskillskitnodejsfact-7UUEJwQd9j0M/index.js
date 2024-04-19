@@ -15,7 +15,10 @@ const functions = require('./functions');
 const bbdd = require('./bbdd');
 
 
-// Manejador de inicio
+//*****************************************************************************************************************/
+//                              MANEJADORES INICIALES (CUESTIONARIO INICIAL)
+//*****************************************************************************************************************/
+
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
@@ -247,6 +250,12 @@ const nivelAnsiedadDiaHandler = {
     }
 };
 
+
+//*****************************************************************************************************************/
+//                              MANEJADORES PARA SESIÓN DE RESPIRACIÓN
+//*****************************************************************************************************************/
+
+
 // Manejador para dar la bienvenida a la sesión de respiración y obtener la duración
 const bienvenidaSesionRespiracionHandler = {
     canHandle(handlerInput) {
@@ -302,6 +311,12 @@ const sesionRespiracionHandler = {
     }
 };
 
+
+//*****************************************************************************************************************/
+//                              MANEJADORES PARA SESIÓN DE MEDITACIÓN
+//*****************************************************************************************************************/
+
+
 // Manejador para dar la bienvenida a la meditación y elegir la temática deseada
 const bienvenidaSesionMeditacionHandler = {
     canHandle(handlerInput) {
@@ -353,6 +368,11 @@ const sesionMeditacionHandler = {
 };
 
 
+//*****************************************************************************************************************/
+//                                          MANEJADORES PARA JUEGOS
+//*****************************************************************************************************************/
+
+
 // Manejador para dar la bienvenida a los juegos y elegir el juego al que desean jugar
 const bienvenidaJuegosHandler = {
     canHandle(handlerInput) {
@@ -396,6 +416,11 @@ const bienvenidaJuegoCategoriasHandler = {
 
     }
 };
+
+
+//*****************************************************************************************************************/
+//                                              MANEJADORES BASE
+//*****************************************************************************************************************/
 
 
 const PauseIntentHandler = {
@@ -518,11 +543,11 @@ const ErrorHandler = {
     }
 };
 
-/**
- * This handler acts as the entry point for your skill, routing all request and response
- * payloads to the handlers above. Make sure any new handlers or interceptors you've
- * defined are included below. The order matters - they're processed top to bottom 
- * */
+
+//*****************************************************************************************************************/
+//                                          EXPORT DE LOS MANEJADORES
+//*****************************************************************************************************************/
+
 exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
