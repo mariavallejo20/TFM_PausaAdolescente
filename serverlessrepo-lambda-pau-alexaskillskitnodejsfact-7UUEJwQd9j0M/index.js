@@ -403,6 +403,9 @@ const bienvenidaJuegoCategoriasHandler = {
     },
     async handle(handlerInput) {
 
+        const juegoCategorias = await bbdd.getJuegoCategorias();
+        const { ejemplos, categoria } = juegoCategorias;
+
         let speakOutput = '';
 
         if (GENEROADOLESCENTE == 'masculino')
