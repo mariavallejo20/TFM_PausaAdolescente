@@ -395,6 +395,10 @@ const bienvenidaJuegosHandler = {
     }
 };
 
+// ? Buscar la forma de realizar 5 rondas y después dar el resultado. Utilizar variables de sesión
+
+let count = 0;
+
 // Manejador para dar la bienvenida al juego de categorias
 const bienvenidaJuegoCategoriasHandler = {
     canHandle(handlerInput) {
@@ -413,6 +417,10 @@ const bienvenidaJuegoCategoriasHandler = {
         else if (GENEROADOLESCENTE == 'femenino')
             speakOutput += `¡${NOMBREADOLESCENTE}, bienvenida al juego de categorías! En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. Jugaremos 5 rondas. Preparate para empezar: <break time="1s"/>`;
 
+        speakOutput += `Para responder debes decir: "mi categorias es..." Vamos con la primera ronda: <break time="1s"/>`;
+
+        speakOutput += `Los ejemplos son: ${ejemplos}, ¿Cúal es tu elección de categoría?`; 
+        
         return handlerInput.responseBuilder
         .speak(speakOutput)
         .getResponse();
@@ -420,6 +428,36 @@ const bienvenidaJuegoCategoriasHandler = {
     }
 };
 
+
+// Manejador para dar la bienvenida al juego de categorias
+const juegoCategoriasHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'juegoCategorias';
+    },
+    async handle(handlerInput) {
+
+        const juegoCategorias = await bbdd.getJuegoCategorias();
+        const { ejemplos, categoria } = juegoCategorias;
+
+
+        // ! NO FUNCIONA: No reconoce bien el manejador
+        count++; // Incrementar el contador global
+
+        let speakOutput = '';
+
+        if (count < 5) {
+            speakOutput += 'Vamos con la siguiente ronda...';
+        } else {
+            speakOutput += '¡Vamos a ver tus resultados!';
+        }
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .getResponse();
+
+    }
+};
 
 //*****************************************************************************************************************/
 //                                              MANEJADORES BASE
@@ -566,6 +604,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         sesionMeditacionHandler,
         bienvenidaJuegosHandler,
         bienvenidaJuegoCategoriasHandler,
+        juegoCategoriasHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
