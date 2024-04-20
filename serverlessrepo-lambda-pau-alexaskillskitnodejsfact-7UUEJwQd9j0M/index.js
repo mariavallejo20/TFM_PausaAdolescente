@@ -362,6 +362,7 @@ const sesionMeditacionHandler = {
         
         return handlerInput.responseBuilder
         .speak(speakOutput)
+        .withShouldEndSession(true) // La sesión finaliza cuando se acaba la sesión de meditación
         .getResponse();
 
     }
