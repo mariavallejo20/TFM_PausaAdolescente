@@ -328,18 +328,20 @@ const bienvenidaSesionMeditacionHandler = {
         let speakOutput = '';
 
         if (GENEROADOLESCENTE == 'masculino')
-            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
         else if (GENEROADOLESCENTE == 'femenino')
-            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
+        .reprompt('Dime qué necesitas: : respiración, meditación, juego o terapia.')
         .getResponse();
 
     }
 };
 
-// Manejador para desarrollar la sesión de meditación
+
+//Manejador para desarrollar la sesión de meditación
 const sesionMeditacionHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -347,16 +349,16 @@ const sesionMeditacionHandler = {
     },
     async handle(handlerInput) {
 
-        const tema = handlerInput.requestEnvelope.request.intent.slots.tematicaMeditacion.value;
+        const tema = handlerInput.requestEnvelope.request.intent.slots.tema.value;
 
         const sesion = await bbdd.getSesionMeditacion(tema);
         const { inicio, refuerzo, fin } = sesion;
 
-        let speakOutput = `Genial, haremos una sesión de relajación sobre ${tema}. Antes de comenzar, asegúrate de estar en un lugar tranquilo donde puedas relajarte y estar en silencio. <break time="1s"/> Vamos a empezar: <break time="1s"/>`;
+        let speakOutput = `Genial, haremos una sesión de relajación sobre ${tema}. Antes de comenzar, asegúrate de estar en un lugar tranquilo donde puedas relajarte y estar en silencio. Te iré guiando por la sesión y dejándote tiempo para que sigas mis indicaciones. <break time="1s"/> Vamos a empezar: <break time="1s"/>`;
 
-        speakOutput += `<prosody rate="slow">${inicio}</prosody> <break time="10s"/> <break time="5s"/> `;
-        speakOutput += `<prosody rate="slow">${refuerzo}</prosody> <break time="10s"/> <break time="5s"/> `;
-        speakOutput += `<prosody rate="slow">${fin}</prosody> <break time="10s"/> <break time="5s"/> `;
+        speakOutput += `<prosody rate="slow">${inicio}</prosody> <break time="10s"/> <break time="10s"/> `;
+        speakOutput += `<prosody rate="slow">${refuerzo}</prosody> <break time="10s"/> <break time="10s"/> `;
+        speakOutput += `<prosody rate="slow">${fin}</prosody> <break time="10s"/> <break time="10s"/> `;
 
         speakOutput += 'Fin de la sesión de meditación. Recuerda que siempre puedes regresar a este lugar de tranquilidad en cualquier momento que lo necesites. La paz está dentro de ti, esperando ser encontrada cada vez que busques en tu interior.';
         
@@ -375,90 +377,90 @@ const sesionMeditacionHandler = {
 
 
 // Manejador para dar la bienvenida a los juegos y elegir el juego al que desean jugar
-const bienvenidaJuegosHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaJuegos';
-    },
-    async handle(handlerInput) {
+// const bienvenidaJuegosHandler = {
+//     canHandle(handlerInput) {
+//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaJuegos';
+//     },
+//     async handle(handlerInput) {
 
-        let speakOutput = '';
+//         let speakOutput = '';
 
-        if (GENEROADOLESCENTE == 'masculino')
-            speakOutput += `${NOMBREADOLESCENTE}, ¿Listo para jugar y distraerte un poco? Elige el juego al que quieres jugar. Puedes decir 'categorías', 'películas' o 'palabras'"`;
-        else if (GENEROADOLESCENTE == 'femenino')
-            speakOutput += `${NOMBREADOLESCENTE}, ¿Lista para jugar y distraerte un poco? Elige el juego al que quieres jugar. Puedes decir 'categorías', 'películas' o 'palabras'"`;
+//         if (GENEROADOLESCENTE == 'masculino')
+//             speakOutput += `${NOMBREADOLESCENTE}, ¿Listo para jugar y distraerte un poco? Elige el juego al que quieres jugar. Puedes decir 'categorías', 'películas' o 'palabras'"`;
+//         else if (GENEROADOLESCENTE == 'femenino')
+//             speakOutput += `${NOMBREADOLESCENTE}, ¿Lista para jugar y distraerte un poco? Elige el juego al que quieres jugar. Puedes decir 'categorías', 'películas' o 'palabras'"`;
 
-        return handlerInput.responseBuilder
-        .speak(speakOutput)
-        .getResponse();
+//         return handlerInput.responseBuilder
+//         .speak(speakOutput)
+//         .getResponse();
 
-    }
-};
+//     }
+// };
 
-// ? Buscar la forma de realizar 5 rondas y después dar el resultado. Utilizar variables de sesión
+// // ? Buscar la forma de realizar 5 rondas y después dar el resultado. Utilizar variables de sesión
 
-let count = 0;
+// let count = 0;
 
-// Manejador para dar la bienvenida al juego de categorias
-const bienvenidaJuegoCategoriasHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaJuegoCategorias';
-    },
-    async handle(handlerInput) {
+// // Manejador para dar la bienvenida al juego de categorias
+// const bienvenidaJuegoCategoriasHandler = {
+//     canHandle(handlerInput) {
+//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaJuegoCategorias';
+//     },
+//     async handle(handlerInput) {
 
-        const juegoCategorias = await bbdd.getJuegoCategorias();
-        const { ejemplos, categoria } = juegoCategorias;
+//         const juegoCategorias = await bbdd.getJuegoCategorias();
+//         const { ejemplos, categoria } = juegoCategorias;
 
-        let speakOutput = '';
+//         let speakOutput = '';
 
-        if (GENEROADOLESCENTE == 'masculino')
-            speakOutput += `¡${NOMBREADOLESCENTE}, bienvenido al juego de categorías! En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. Jugaremos 5 rondas. Preparate para empezar: <break time="1s"/>`;
-        else if (GENEROADOLESCENTE == 'femenino')
-            speakOutput += `¡${NOMBREADOLESCENTE}, bienvenida al juego de categorías! En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. Jugaremos 5 rondas. Preparate para empezar: <break time="1s"/>`;
+//         if (GENEROADOLESCENTE == 'masculino')
+//             speakOutput += `¡${NOMBREADOLESCENTE}, bienvenido al juego de categorías! En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. Jugaremos 5 rondas. Preparate para empezar: <break time="1s"/>`;
+//         else if (GENEROADOLESCENTE == 'femenino')
+//             speakOutput += `¡${NOMBREADOLESCENTE}, bienvenida al juego de categorías! En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. Jugaremos 5 rondas. Preparate para empezar: <break time="1s"/>`;
 
-        speakOutput += `Para responder debes decir: "mi categorias es..." Vamos con la primera ronda: <break time="1s"/>`;
+//         speakOutput += `Para responder debes decir: "mi categorias es..." Vamos con la primera ronda: <break time="1s"/>`;
 
-        speakOutput += `Los ejemplos son: ${ejemplos}, ¿Cúal es tu elección de categoría?`; 
+//         speakOutput += `Los ejemplos son: ${ejemplos}, ¿Cúal es tu elección de categoría?`; 
         
-        return handlerInput.responseBuilder
-        .speak(speakOutput)
-        .getResponse();
+//         return handlerInput.responseBuilder
+//         .speak(speakOutput)
+//         .getResponse();
 
-    }
-};
-
-
-// Manejador para dar la bienvenida al juego de categorias
-const juegoCategoriasHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'juegoCategorias';
-    },
-    async handle(handlerInput) {
-
-        const juegoCategorias = await bbdd.getJuegoCategorias();
-        const { ejemplos, categoria } = juegoCategorias;
+//     }
+// };
 
 
-        // ! NO FUNCIONA: No reconoce bien el manejador
-        count++; // Incrementar el contador global
+// // Manejador para dar la bienvenida al juego de categorias
+// const juegoCategoriasHandler = {
+//     canHandle(handlerInput) {
+//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'juegoCategorias';
+//     },
+//     async handle(handlerInput) {
 
-        let speakOutput = '';
+//         const juegoCategorias = await bbdd.getJuegoCategorias();
+//         const { ejemplos, categoria } = juegoCategorias;
 
-        if (count < 5) {
-            speakOutput += 'Vamos con la siguiente ronda...';
-        } else {
-            speakOutput += '¡Vamos a ver tus resultados!';
-        }
 
-        return handlerInput.responseBuilder
-        .speak(speakOutput)
-        .getResponse();
+//         // ! NO FUNCIONA: No reconoce bien el manejador
+//         count++; // Incrementar el contador global
 
-    }
-};
+//         let speakOutput = '';
+
+//         if (count < 5) {
+//             speakOutput += 'Vamos con la siguiente ronda...';
+//         } else {
+//             speakOutput += '¡Vamos a ver tus resultados!';
+//         }
+
+//         return handlerInput.responseBuilder
+//         .speak(speakOutput)
+//         .getResponse();
+
+//     }
+// };
 
 //*****************************************************************************************************************/
 //                                              MANEJADORES BASE
@@ -603,9 +605,9 @@ exports.handler = Alexa.SkillBuilders.custom()
         sesionRespiracionHandler,
         bienvenidaSesionMeditacionHandler,
         sesionMeditacionHandler,
-        bienvenidaJuegosHandler,
-        bienvenidaJuegoCategoriasHandler,
-        juegoCategoriasHandler,
+        // bienvenidaJuegosHandler,
+        // bienvenidaJuegoCategoriasHandler,
+        // juegoCategoriasHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
