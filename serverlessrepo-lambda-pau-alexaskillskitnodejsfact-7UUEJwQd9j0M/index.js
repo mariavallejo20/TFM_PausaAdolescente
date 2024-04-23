@@ -377,59 +377,59 @@ const sesionMeditacionHandler = {
 
 
 // Manejador para dar la bienvenida a los juegos y elegir el juego al que desean jugar
-// const bienvenidaJuegosHandler = {
-//     canHandle(handlerInput) {
-//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaJuegos';
-//     },
-//     async handle(handlerInput) {
+const bienvenidaJuegosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaJuegos';
+    },
+    async handle(handlerInput) {
 
-//         let speakOutput = '';
+        let speakOutput = '';
 
-//         if (GENEROADOLESCENTE == 'masculino')
-//             speakOutput += `${NOMBREADOLESCENTE}, ¿Listo para jugar y distraerte un poco? Elige el juego al que quieres jugar. Puedes decir 'categorías', 'películas' o 'palabras'"`;
-//         else if (GENEROADOLESCENTE == 'femenino')
-//             speakOutput += `${NOMBREADOLESCENTE}, ¿Lista para jugar y distraerte un poco? Elige el juego al que quieres jugar. Puedes decir 'categorías', 'películas' o 'palabras'"`;
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `${NOMBREADOLESCENTE}, ¿Listo para jugar y distraerte un poco? Elige el juego al que quieres jugar. Puedes decir 'categorías', 'películas' o 'palabras'"`;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `${NOMBREADOLESCENTE}, ¿Lista para jugar y distraerte un poco? Elige el juego al que quieres jugar. Puedes decir 'categorías', 'películas' o 'palabras'"`;
 
-//         return handlerInput.responseBuilder
-//         .speak(speakOutput)
-//         .getResponse();
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .getResponse();
 
-//     }
-// };
+    }
+};
 
 // // ? Buscar la forma de realizar 5 rondas y después dar el resultado. Utilizar variables de sesión
 
 // let count = 0;
 
-// // Manejador para dar la bienvenida al juego de categorias
-// const bienvenidaJuegoCategoriasHandler = {
-//     canHandle(handlerInput) {
-//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaJuegoCategorias';
-//     },
-//     async handle(handlerInput) {
+// Manejador para dar la bienvenida al juego de categorias
+const bienvenidaJuegoCategoriasHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaJuegoCategorias';
+    },
+    async handle(handlerInput) {
 
-//         const juegoCategorias = await bbdd.getJuegoCategorias();
-//         const { ejemplos, categoria } = juegoCategorias;
+        // const juegoCategorias = await bbdd.getJuegoCategorias();
+        // const { ejemplos, categoria } = juegoCategorias;
 
-//         let speakOutput = '';
+        let speakOutput = 'hola';
 
-//         if (GENEROADOLESCENTE == 'masculino')
-//             speakOutput += `¡${NOMBREADOLESCENTE}, bienvenido al juego de categorías! En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. Jugaremos 5 rondas. Preparate para empezar: <break time="1s"/>`;
-//         else if (GENEROADOLESCENTE == 'femenino')
-//             speakOutput += `¡${NOMBREADOLESCENTE}, bienvenida al juego de categorías! En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. Jugaremos 5 rondas. Preparate para empezar: <break time="1s"/>`;
+        // if (GENEROADOLESCENTE == 'masculino')
+        //     speakOutput += `¡${NOMBREADOLESCENTE}, bienvenido al juego de categorías! En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. Jugaremos 5 rondas. Preparate para empezar: <break time="1s"/>`;
+        // else if (GENEROADOLESCENTE == 'femenino')
+        //     speakOutput += `¡${NOMBREADOLESCENTE}, bienvenida al juego de categorías! En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. Jugaremos 5 rondas. Preparate para empezar: <break time="1s"/>`;
 
-//         speakOutput += `Para responder debes decir: "mi categorias es..." Vamos con la primera ronda: <break time="1s"/>`;
+        // speakOutput += `Para responder debes decir: "mi categorias es..." Vamos con la primera ronda: <break time="1s"/>`;
 
-//         speakOutput += `Los ejemplos son: ${ejemplos}, ¿Cúal es tu elección de categoría?`; 
+        // speakOutput += `Los ejemplos son: ${ejemplos}, ¿Cúal es tu elección de categoría?`; 
         
-//         return handlerInput.responseBuilder
-//         .speak(speakOutput)
-//         .getResponse();
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .getResponse();
 
-//     }
-// };
+    }
+};
 
 
 // // Manejador para dar la bienvenida al juego de categorias
@@ -605,8 +605,8 @@ exports.handler = Alexa.SkillBuilders.custom()
         sesionRespiracionHandler,
         bienvenidaSesionMeditacionHandler,
         sesionMeditacionHandler,
-        // bienvenidaJuegosHandler,
-        // bienvenidaJuegoCategoriasHandler,
+        bienvenidaJuegosHandler,
+        bienvenidaJuegoCategoriasHandler,
         // juegoCategoriasHandler,
         PauseIntentHandler,
         HelpIntentHandler,
