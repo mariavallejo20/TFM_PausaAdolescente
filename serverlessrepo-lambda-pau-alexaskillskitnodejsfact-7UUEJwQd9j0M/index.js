@@ -387,42 +387,22 @@ const bienvenidaJuegosHandler = {
         let speakOutput = '';
 
         if (GENEROADOLESCENTE == 'masculino')
-            speakOutput += `${NOMBREADOLESCENTE}, ¿Listo para jugar y distraerte un poco? Elige el juego al que quieres jugar. Puedes decir 'categorías', 'películas' o 'palabras'"`;
+            speakOutput += `Genial ${NOMBREADOLESCENTE}, ¿Listo para jugar y distraerte un poco? <break time="1s"/>"`;
         else if (GENEROADOLESCENTE == 'femenino')
-            speakOutput += `${NOMBREADOLESCENTE}, ¿Lista para jugar y distraerte un poco? Elige el juego al que quieres jugar. Puedes decir 'categorías', 'películas' o 'palabras'"`;
+            speakOutput += `Genial ${NOMBREADOLESCENTE}, ¿Lista para jugar y distraerte un poco? <break time="1s"/>"`;
 
-        return handlerInput.responseBuilder
-        .speak(speakOutput)
-        .getResponse();
+        const tipoJuego = 'categorias';
 
-    }
-};
+        if (tipoJuego == 'categorias')
+        {
+            speakOutput += `¡Vamos a jugar a CATEGORÍAS! <break time="1s"/> En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. <break time="1s"/>`;
+            const juegoCategorias = await bbdd.getJuegoCategorias();
+            const { ejemplos, categoria } = juegoCategorias;
 
-// // ? Buscar la forma de realizar 5 rondas y después dar el resultado. Utilizar variables de sesión
+            speakOutput += `Para responder debes decir: "la solución es..." <break time="1s"/> Prepárate para empezar: <break time="1s"/>`;
 
-// let count = 0;
-
-// Manejador para dar la bienvenida al juego de categorias
-const bienvenidaJuegoCategoriasHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaJuegoCategorias';
-    },
-    async handle(handlerInput) {
-
-        // const juegoCategorias = await bbdd.getJuegoCategorias();
-        // const { ejemplos, categoria } = juegoCategorias;
-
-        let speakOutput = 'hola';
-
-        // if (GENEROADOLESCENTE == 'masculino')
-        //     speakOutput += `¡${NOMBREADOLESCENTE}, bienvenido al juego de categorías! En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. Jugaremos 5 rondas. Preparate para empezar: <break time="1s"/>`;
-        // else if (GENEROADOLESCENTE == 'femenino')
-        //     speakOutput += `¡${NOMBREADOLESCENTE}, bienvenida al juego de categorías! En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. Jugaremos 5 rondas. Preparate para empezar: <break time="1s"/>`;
-
-        // speakOutput += `Para responder debes decir: "mi categorias es..." Vamos con la primera ronda: <break time="1s"/>`;
-
-        // speakOutput += `Los ejemplos son: ${ejemplos}, ¿Cúal es tu elección de categoría?`; 
+            speakOutput += `Los ejemplos son: ${ejemplos}, ¿A qué categoría pertenecen?`; 
+        }
         
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -431,36 +411,25 @@ const bienvenidaJuegoCategoriasHandler = {
     }
 };
 
+// ? Buscar la forma de realizar 5 rondas y después dar el resultado (Utilizar variables de sesión)
 
-// // Manejador para dar la bienvenida al juego de categorias
-// const juegoCategoriasHandler = {
-//     canHandle(handlerInput) {
-//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'juegoCategorias';
-//     },
-//     async handle(handlerInput) {
+// Manejador para recoger la solución de los juegos
+const solucionJuegoHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'solucionJuego';
+    },
+    handle(handlerInput) {
 
-//         const juegoCategorias = await bbdd.getJuegoCategorias();
-//         const { ejemplos, categoria } = juegoCategorias;
+        let speakOutput = `Genial has acertado`;
+        
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .getResponse();
 
+    }
+};
 
-//         // ! NO FUNCIONA: No reconoce bien el manejador
-//         count++; // Incrementar el contador global
-
-//         let speakOutput = '';
-
-//         if (count < 5) {
-//             speakOutput += 'Vamos con la siguiente ronda...';
-//         } else {
-//             speakOutput += '¡Vamos a ver tus resultados!';
-//         }
-
-//         return handlerInput.responseBuilder
-//         .speak(speakOutput)
-//         .getResponse();
-
-//     }
-// };
 
 //*****************************************************************************************************************/
 //                                              MANEJADORES BASE
@@ -606,8 +575,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         bienvenidaSesionMeditacionHandler,
         sesionMeditacionHandler,
         bienvenidaJuegosHandler,
-        bienvenidaJuegoCategoriasHandler,
-        // juegoCategoriasHandler,
+        solucionJuegoHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
