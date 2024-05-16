@@ -9,7 +9,9 @@ async function crearUsuario(idUsuario) {
     const params = {
         TableName: 'Usuario',
         Item: {
-            idUsuario: idUsuario
+            idUsuario: idUsuario,
+            numSesRespiracion: 0,
+            numSesMeditacion: 0
         }
     };
 
@@ -265,8 +267,52 @@ async function getSesionMeditacion(tema) {
     }
 }
 
+//*****************************************************************************************************************/
+//                              FUNCIONES PARA RECUENTO DE SESIONES
+//*****************************************************************************************************************/
+
+async function actualizarNumSesRespiracion(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            UpdateExpression: 'SET numSesRespiracion = numSesRespiracion + :inc',
+            ExpressionAttributeValues: {
+                ':inc': 1
+            },
+            ReturnValues: 'ALL_NEW' // Para obtener el nuevo valor actualizado
+        };
+        const data = await dynamoDB.update(params).promise();
+        return data.Attributes.numSesRespiracion; // Retorna el nuevo valor de numSesRespiracion
+    } catch (error) {
+        console.error('Error al actualizar numSesRespiracion en DynamoDB:', error);
+        throw error;
+    }
+}
 
 
+async function actualizarNumSesMeditacion(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            UpdateExpression: 'SET numSesMeditacion = numSesMeditacion + :inc',
+            ExpressionAttributeValues: {
+                ':inc': 1
+            },
+            ReturnValues: 'ALL_NEW' // Para obtener el nuevo valor actualizado
+        };
+        const data = await dynamoDB.update(params).promise();
+        return data.Attributes.numSesMeditacion; // Retorna el nuevo valor de numSesMeditacion
+    } catch (error) {
+        console.error('Error al actualizar numSesMeditacion en DynamoDB:', error);
+        throw error;
+    }
+}
 
 module.exports = {
     getUsuario,
@@ -281,5 +327,7 @@ module.exports = {
     getNombreUsuario,
     getSesionRespiracion,
     getMusicaSesionRespiracion,
-    getSesionMeditacion
+    getSesionMeditacion,
+    actualizarNumSesRespiracion,
+    actualizarNumSesMeditacion
 };

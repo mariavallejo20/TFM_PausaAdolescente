@@ -266,14 +266,24 @@ const bienvenidaSesionRespiracionHandler = {
 
         let speakOutput = '';
 
-        if (GENEROADOLESCENTE == 'masculino')
-            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a una sesión de respiración guiada. Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"`;
-        else if (GENEROADOLESCENTE == 'femenino')
-            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a una sesión de respiración guiada. Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"`;
+        const numSesUsuario = await bbdd.actualizarNumSesRespiracion(USERID);
 
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a una sesión de respiración guiada <break time="1s"/> `;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a una sesión de respiración guiada <break time="1s"/> `;
+
+        if (numSesUsuario % 5 == 0) {
+            speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_positive_response_03"/>`;
+            speakOutput += `¡Felicidades, vas a realizar tu sesión de respiración número ${numSesUsuario}! `;
+            speakOutput += `<audio src="soundbank://soundlibrary/gameshow/gameshow_01"/>`;
+        }
+        
+        speakOutput += 'Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"';
+        
         return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Dime qué necesitas: : respiración, meditación, juego o terapia.')
+                .reprompt('Dime qué necesitas: : "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"')
                 .getResponse();
 
     }
@@ -325,16 +335,26 @@ const bienvenidaSesionMeditacionHandler = {
     },
     async handle(handlerInput) {
 
+        const numSesUsuario = await bbdd.actualizarNumSesMeditacion(USERID);
+
         let speakOutput = '';
 
         if (GENEROADOLESCENTE == 'masculino')
-            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a tu sesión de meditación para reducir la ansiedad y el estrés.`;
         else if (GENEROADOLESCENTE == 'femenino')
-            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a tu sesión de meditación para reducir la ansiedad y el estrés. `;
+
+        if (numSesUsuario % 5 == 0) {
+            speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_positive_response_03"/>`;
+            speakOutput += `¡Felicidades, vas a realizar tu sesión de meditación número ${numSesUsuario}! `;
+            speakOutput += `<audio src="soundbank://soundlibrary/gameshow/gameshow_01"/>`;
+        }
+
+        speakOutput += 'Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"'
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
-        .reprompt('Dime qué necesitas: : respiración, meditación, juego o terapia.')
+        .reprompt('Dime qué necesitas: : "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"')
         .getResponse();
 
     }
@@ -356,9 +376,12 @@ const sesionMeditacionHandler = {
 
         let speakOutput = `Genial, haremos una sesión de relajación sobre ${tema}. Antes de comenzar, asegúrate de estar en un lugar tranquilo donde puedas relajarte y estar en silencio. Te iré guiando por la sesión y dejándote tiempo para que sigas mis indicaciones. <break time="1s"/> Vamos a empezar: <break time="1s"/>`;
 
-        speakOutput += `<prosody rate="slow">${inicio}</prosody> <break time="10s"/> <break time="10s"/> `;
-        speakOutput += `<prosody rate="slow">${refuerzo}</prosody> <break time="10s"/> <break time="10s"/> `;
-        speakOutput += `<prosody rate="slow">${fin}</prosody> <break time="10s"/> <break time="10s"/> `;
+        speakOutput += `<prosody rate="slow">${inicio}</prosody>`;
+        speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_waiting_loop_30s_01"/>`;
+        speakOutput += `<prosody rate="slow">${refuerzo}</prosody>`;
+        speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_waiting_loop_30s_01"/>`;
+        speakOutput += `<prosody rate="slow">${fin}</prosody>`;
+        speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_waiting_loop_30s_01"/>`;
 
         speakOutput += 'Fin de la sesión de meditación. Recuerda que siempre puedes regresar a este lugar de tranquilidad en cualquier momento que lo necesites. La paz está dentro de ti, esperando ser encontrada cada vez que busques en tu interior.';
         
@@ -369,6 +392,7 @@ const sesionMeditacionHandler = {
 
     }
 };
+
 
 
 //*****************************************************************************************************************/
@@ -514,10 +538,6 @@ exports.handler = Alexa.SkillBuilders.custom()
         sesionRespiracionHandler,
         bienvenidaSesionMeditacionHandler,
         sesionMeditacionHandler,
-        juegosHandler,
-        respuestaJuegoHandler,
-        // bienvenidaJuegosHandler,
-        // solucionJuegoHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
