@@ -15,7 +15,10 @@ const functions = require('./functions');
 const bbdd = require('./bbdd');
 
 
-// Manejador de inicio
+//*****************************************************************************************************************/
+//                              MANEJADORES INICIALES (CUESTIONARIO INICIAL)
+//*****************************************************************************************************************/
+
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
@@ -247,6 +250,12 @@ const nivelAnsiedadDiaHandler = {
     }
 };
 
+
+//*****************************************************************************************************************/
+//                              MANEJADORES PARA SESIÓN DE RESPIRACIÓN
+//*****************************************************************************************************************/
+
+
 // Manejador para dar la bienvenida a la sesión de respiración y obtener la duración
 const bienvenidaSesionRespiracionHandler = {
     canHandle(handlerInput) {
@@ -301,6 +310,71 @@ const sesionRespiracionHandler = {
 
     }
 };
+
+
+//*****************************************************************************************************************/
+//                              MANEJADORES PARA SESIÓN DE MEDITACIÓN
+//*****************************************************************************************************************/
+
+
+// Manejador para dar la bienvenida a la meditación y elegir la temática deseada
+const bienvenidaSesionMeditacionHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaSesionMeditacion';
+    },
+    async handle(handlerInput) {
+
+        let speakOutput = '';
+
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt('Dime qué necesitas: : respiración, meditación, juego o terapia.')
+        .getResponse();
+
+    }
+};
+
+
+//Manejador para desarrollar la sesión de meditación
+const sesionMeditacionHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'sesionMeditacion';
+    },
+    async handle(handlerInput) {
+
+        const tema = handlerInput.requestEnvelope.request.intent.slots.tema.value;
+
+        const sesion = await bbdd.getSesionMeditacion(tema);
+        const { inicio, refuerzo, fin } = sesion;
+
+        let speakOutput = `Genial, haremos una sesión de relajación sobre ${tema}. Antes de comenzar, asegúrate de estar en un lugar tranquilo donde puedas relajarte y estar en silencio. Te iré guiando por la sesión y dejándote tiempo para que sigas mis indicaciones. <break time="1s"/> Vamos a empezar: <break time="1s"/>`;
+
+        speakOutput += `<prosody rate="slow">${inicio}</prosody> <break time="10s"/> <break time="10s"/> `;
+        speakOutput += `<prosody rate="slow">${refuerzo}</prosody> <break time="10s"/> <break time="10s"/> `;
+        speakOutput += `<prosody rate="slow">${fin}</prosody> <break time="10s"/> <break time="10s"/> `;
+
+        speakOutput += 'Fin de la sesión de meditación. Recuerda que siempre puedes regresar a este lugar de tranquilidad en cualquier momento que lo necesites. La paz está dentro de ti, esperando ser encontrada cada vez que busques en tu interior.';
+        
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .withShouldEndSession(true) // La sesión finaliza cuando se acaba la sesión de meditación
+        .getResponse();
+
+    }
+};
+
+
+//*****************************************************************************************************************/
+//                                              MANEJADORES BASE
+//*****************************************************************************************************************/
+
 
 const PauseIntentHandler = {
     canHandle(handlerInput) {
@@ -422,11 +496,11 @@ const ErrorHandler = {
     }
 };
 
-/**
- * This handler acts as the entry point for your skill, routing all request and response
- * payloads to the handlers above. Make sure any new handlers or interceptors you've
- * defined are included below. The order matters - they're processed top to bottom 
- * */
+
+//*****************************************************************************************************************/
+//                                          EXPORT DE LOS MANEJADORES
+//*****************************************************************************************************************/
+
 exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
@@ -438,6 +512,12 @@ exports.handler = Alexa.SkillBuilders.custom()
         nivelAnsiedadDiaHandler,
         bienvenidaSesionRespiracionHandler,
         sesionRespiracionHandler,
+        bienvenidaSesionMeditacionHandler,
+        sesionMeditacionHandler,
+        juegosHandler,
+        respuestaJuegoHandler,
+        // bienvenidaJuegosHandler,
+        // solucionJuegoHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,

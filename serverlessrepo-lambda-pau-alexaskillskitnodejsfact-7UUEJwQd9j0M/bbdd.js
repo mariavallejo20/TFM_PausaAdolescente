@@ -237,6 +237,37 @@ async function getMusicaSesionRespiracion(duracion) {
     }
 }
 
+
+//*****************************************************************************************************************/
+//                              FUNCIONES PARA OBTENER SESIÓN DE MEDITACION
+//*****************************************************************************************************************/
+
+async function getSesionMeditacion(tema) {
+    const params = {
+        TableName: 'SesionMeditacion',
+        FilterExpression: 'tema = :tema',
+        ProjectionExpression: 'inicio, refuerzo, fin',
+        ExpressionAttributeValues: {
+            ':tema': tema
+        }
+    };
+
+    try {
+        const data = await dynamoDB.scan(params).promise();
+        if (data.Items.length > 0) {
+            const { inicio, refuerzo, fin } = data.Items[0];
+            return { inicio, refuerzo, fin };
+        } else {
+            return null;
+        }
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+
+
 module.exports = {
     getUsuario,
     crearUsuario,
@@ -249,5 +280,6 @@ module.exports = {
     getGeneroUsuario,
     getNombreUsuario,
     getSesionRespiracion,
-    getMusicaSesionRespiracion
+    getMusicaSesionRespiracion,
+    getSesionMeditacion
 };
