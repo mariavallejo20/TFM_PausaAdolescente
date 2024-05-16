@@ -372,66 +372,6 @@ const sesionMeditacionHandler = {
 
 
 //*****************************************************************************************************************/
-//                                          MANEJADORES PARA JUEGOS
-//*****************************************************************************************************************/
-
-
-// Manejador para dar la bienvenida a los juegos y elegir el juego al que desean jugar
-const bienvenidaJuegosHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaJuegos';
-    },
-    async handle(handlerInput) {
-
-        let speakOutput = '';
-
-        if (GENEROADOLESCENTE == 'masculino')
-            speakOutput += `Genial ${NOMBREADOLESCENTE}, ¿Listo para jugar y distraerte un poco? <break time="1s"/>"`;
-        else if (GENEROADOLESCENTE == 'femenino')
-            speakOutput += `Genial ${NOMBREADOLESCENTE}, ¿Lista para jugar y distraerte un poco? <break time="1s"/>"`;
-
-        const tipoJuego = 'categorias';
-
-        if (tipoJuego == 'categorias')
-        {
-            speakOutput += `¡Vamos a jugar a CATEGORÍAS! <break time="1s"/> En este juego, te diré una lista de palabras y tú deberás decir a qué categoría crees que pertenecen esas palabras. <break time="1s"/>`;
-            const juegoCategorias = await bbdd.getJuegoCategorias();
-            const { ejemplos, categoria } = juegoCategorias;
-
-            speakOutput += `Para responder debes decir: "la solución es..." <break time="1s"/> Prepárate para empezar: <break time="1s"/>`;
-
-            speakOutput += `Los ejemplos son: ${ejemplos}, ¿A qué categoría pertenecen?`; 
-        }
-        
-        return handlerInput.responseBuilder
-        .speak(speakOutput)
-        .getResponse();
-
-    }
-};
-
-// ? Buscar la forma de realizar 5 rondas y después dar el resultado (Utilizar variables de sesión)
-
-// Manejador para recoger la solución de los juegos
-const solucionJuegoHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'solucionJuego';
-    },
-    handle(handlerInput) {
-
-        let speakOutput = `Genial has acertado`;
-        
-        return handlerInput.responseBuilder
-        .speak(speakOutput)
-        .getResponse();
-
-    }
-};
-
-
-//*****************************************************************************************************************/
 //                                              MANEJADORES BASE
 //*****************************************************************************************************************/
 
@@ -574,8 +514,10 @@ exports.handler = Alexa.SkillBuilders.custom()
         sesionRespiracionHandler,
         bienvenidaSesionMeditacionHandler,
         sesionMeditacionHandler,
-        bienvenidaJuegosHandler,
-        solucionJuegoHandler,
+        juegosHandler,
+        respuestaJuegoHandler,
+        // bienvenidaJuegosHandler,
+        // solucionJuegoHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
