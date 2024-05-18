@@ -231,14 +231,14 @@ const nivelAnsiedadDiaHandler = {
         const nivelAnsiedad = handlerInput.requestEnvelope.request.intent.slots.nivelAnsiedad.value;
         
         if (nivelAnsiedad) {
-            const speakOutput = `${nivelAnsiedad}, entendido. Vamos a trabajar en ello juntos. <break time="1s"/> ¿Qué necesitas?: respiración, meditación, juego o terapia`;
+            const speakOutput = `${nivelAnsiedad}, entendido. Vamos a trabajar en ello juntos. <break time="1s"/> ¿Qué necesitas?: respiración, meditación o recuerdos`;
             
             // Añadimos el nivel de ansiedad del usuario en fucnión del idUsuario
             await bbdd.addnivelAnsiedadUsuario(USERID, nivelAnsiedad);
             
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Dime qué necesitas: : respiración, meditación, juego o terapia.')
+                .reprompt('Dime qué necesitas: respiración, meditación o recuerdos.')
                 .getResponse();
         } else {
             const speakOutput = 'Lo siento, no he entendido tu nivel de ansiedad. Dime un número del 1 al 10.';
@@ -394,11 +394,172 @@ const sesionMeditacionHandler = {
 };
 
 
+//*****************************************************************************************************************/
+//                              MANEJADORES PARA DIARIO DE RECUERDOS
+//*****************************************************************************************************************/
+
+
+// Manejador para dar la bienvenida al diario de recuerdos y elegir la acción deseada
+const bienvenidaRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        let speakOutput = '';
+
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `¡${NOMBREADOLESCENTE}, bienvenido a tu diario de recuerdos! `;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `'${NOMBREADOLESCENTE}, bienvenida a tu diario de recuerdos! `;
+
+        speakOutput += 'Este es un lugar especial donde puedes guardar pequeños recuerdos que te hagan sentir bien y te ayuden a combatir la ansiedad y el estrés. Puedes añadir momentos que te hagan sonreír o te hagan sentir feliz. Puedes decir "Guardar un recuerdo" para añadir algo nuevo, o "Escuchar un recuerdo" para escuchar uno de tus recuerdos. ¿Qué te gustaría hacer?';
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+// Manejador para dar guardar recuerdos
+const guardarRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'guardarRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        let speakOutput = '¡Genial, vamos a añadir un nuevo recuerdo a tu diario de recuerdos! Para guardar un nuevo recordatorio a tu diario deberás indicar un título y su descripción. ';
+
+        speakOutput +=  'Para el título del recuerdo, por favor di: "El título de mi recuerdo es ...".';
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+// Manejador para dar titulo a los recuerdos
+const capturarTituloRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'capturarTituloRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        const tituloRecuerdo = handlerInput.requestEnvelope.request.intent.slots.tituloRecuerdo.value;
+
+        // Guardar el título en los atributos del handlerInput
+        const attributes = handlerInput.attributesManager.getSessionAttributes();
+        attributes.tituloRecuerdo = tituloRecuerdo;
+        handlerInput.attributesManager.setSessionAttributes(attributes);
+
+        let speakOutput = `¡Perfecto! ¿Cúal es la descripción para ${tituloRecuerdo}?. Para añadir la descripción debes decir: "La descripción de mi recuerdo es..."`;
+
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+// Manejador para dar descripcion a los recuerdos
+const capturarDescripcionRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'capturarDescripcionRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        // Recuperar el título del manejador anterior de los atributos
+        const attributes = handlerInput.attributesManager.getSessionAttributes();
+        const tituloRecuerdo = attributes.tituloRecuerdo;
+
+        const descripcionRecuerdo = handlerInput.requestEnvelope.request.intent.slots.descripcionRecuerdo.value;
+
+        await bbdd.guardarRecuerdo(USERID, tituloRecuerdo, descripcionRecuerdo);
+
+        let speakOutput = `¡Listo! He guardato tu nuevo recuerdo. Recuerda que puedes escuchar tus recuerdos diciendo "Escuchar un recuerdo". `;
+
+        speakOutput += '¿Qué necesitas ahora: respiración, meditación o escuchar un recuerdo?';
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+// Manejador para dar recuperar recuerdos
+const recuperarRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'recuperarRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        const listaTitulos = await bbdd.recuperarListaRecuerdos(USERID)
+
+        // Guardar la lista de titulos en los atributos del handlerInput
+        const attributes = handlerInput.attributesManager.getSessionAttributes();
+        attributes.listaTitulosRecuerdo = listaTitulos;
+        handlerInput.attributesManager.setSessionAttributes(attributes);
+        
+        const speakOutput = `Tu lista de recuerdos es: ${listaTitulos}. Para elegir cual quieres escuchar debes decir "Elijo mi recuerdo..."`;
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+// Manejador para escuchar un recuerdo
+const elegirRecuerdoHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'elegirRecuerdo';
+    },
+    async handle(handlerInput) {
+
+        const recuerdoSeleccionado = handlerInput.requestEnvelope.request.intent.slots.recuerdo.value;
+
+        const descripcionRecuerdo = await bbdd.recuperarRecuerdo(USERID, recuerdoSeleccionado)
+
+        let speakOutput = '';
+
+        if(descripcionRecuerdo != null)
+            speakOutput +=  `Tu recuerdo es: ${descripcionRecuerdo} `;
+        else
+        {
+            // Recuperar la lista de titulos del manejador anterior de los atributos
+            const attributes = handlerInput.attributesManager.getSessionAttributes();
+            const listaTitulosRecuerdo = attributes.listaTitulosRecuerdo;
+
+            speakOutput += `No existe ningún recuerdo con ese título, vuelve a intentarlo. Tu lista de recuerdos es: ${listaTitulosRecuerdo}. Para elegir uno debes decir: "Elijo mi recuerdo..."`
+        }
+            
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
 
 //*****************************************************************************************************************/
 //                                              MANEJADORES BASE
 //*****************************************************************************************************************/
-
 
 const PauseIntentHandler = {
     canHandle(handlerInput) {
@@ -538,6 +699,12 @@ exports.handler = Alexa.SkillBuilders.custom()
         sesionRespiracionHandler,
         bienvenidaSesionMeditacionHandler,
         sesionMeditacionHandler,
+        bienvenidaRecuerdosHandler,
+        guardarRecuerdosHandler,
+        capturarTituloRecuerdosHandler,
+        capturarDescripcionRecuerdosHandler,
+        recuperarRecuerdosHandler,
+        elegirRecuerdoHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,

@@ -220,7 +220,7 @@ async function getSesionRespiracion(duracion) {
 }
 
 
-// Función independiente para consultar la base de datos
+// Función para obtener la musica en funcion de la duracion
 async function getMusicaSesionRespiracion(duracion) {
     const params = {
         TableName: 'SesionRespiracion',
@@ -314,6 +314,79 @@ async function actualizarNumSesMeditacion(idUsuario) {
     }
 }
 
+//*****************************************************************************************************************/
+//                              FUNCIONES PARA DIARIO DE RECUERDOS
+//*****************************************************************************************************************/
+
+// Función para guardar un nuevo recuerdo en la base de datos
+async function guardarRecuerdo (idUsuario, titulo, descripcion)
+{
+   
+    const params = {
+        TableName: 'Recuerdo',
+        Item: {
+            idRecuerdo: Math.random().toString(36).substring(7), // ID único para cada recuerdo
+            idUsuario: idUsuario,
+            titulo: titulo,
+            descripcion: descripcion
+        }
+    };
+
+    try {
+        await dynamoDB.put(params).promise();
+    } catch (error) {
+        console.error("Error al guardar el recuerdo:", error);
+    }
+}
+
+// Función para recuperar la lista de recuerdos de un usuario
+async function recuperarListaRecuerdos(idUsuario)
+{
+    const params = {
+        TableName: 'Recuerdo',
+        FilterExpression: 'idUsuario = :idUsuario',
+        ProjectionExpression: 'titulo', 
+        ExpressionAttributeValues: {
+            ':idUsuario': idUsuario
+        }
+    };
+    try {
+        const data = await dynamoDB.scan(params).promise();
+        if (data.Items && data.Items.length > 0) {
+            const titles = data.Items.map(item => item.titulo);
+            return titles.join(', ');
+        }
+    } catch (error) {
+        console.error("Error al recuperar los recuerdos:", error);
+        
+    }
+}
+
+// Función para recuperar un recuerdo de la base de datos
+async function recuperarRecuerdo(idUsuario, tituloSeleccionado)
+{
+    const params = {
+        TableName: 'Recuerdo',
+        FilterExpression: 'titulo = :titulo AND idUsuario = :idUsuario', 
+        ExpressionAttributeValues: {
+            ':titulo': tituloSeleccionado,
+            ':idUsuario': idUsuario
+        }
+    };
+    try {
+        const data = await dynamoDB.scan(params).promise();
+        if (data.Items && data.Items.length > 0) {
+            const descripcionRecuerdo = data.Items[0].descripcion;
+            return descripcionRecuerdo;
+        }else
+            return null;
+    } catch (error) {
+        console.error("Error al recuperar los recuerdos:", error);
+        
+    }
+}
+
+
 module.exports = {
     getUsuario,
     crearUsuario,
@@ -329,5 +402,8 @@ module.exports = {
     getMusicaSesionRespiracion,
     getSesionMeditacion,
     actualizarNumSesRespiracion,
-    actualizarNumSesMeditacion
+    actualizarNumSesMeditacion,
+    guardarRecuerdo,
+    recuperarListaRecuerdos,
+    recuperarRecuerdo
 };
