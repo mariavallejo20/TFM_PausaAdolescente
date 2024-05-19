@@ -231,14 +231,14 @@ const nivelAnsiedadDiaHandler = {
         const nivelAnsiedad = handlerInput.requestEnvelope.request.intent.slots.nivelAnsiedad.value;
         
         if (nivelAnsiedad) {
-            const speakOutput = `${nivelAnsiedad}, entendido. Vamos a trabajar en ello juntos. <break time="1s"/> ¿Qué necesitas?: respiración, meditación o recuerdos`;
+            const speakOutput = `${nivelAnsiedad}, entendido. Vamos a trabajar en ello juntos. <break time="1s"/> ¿Qué necesitas?: respiración, meditación o diario de recuerdos`;
             
             // Añadimos el nivel de ansiedad del usuario en fucnión del idUsuario
             await bbdd.addnivelAnsiedadUsuario(USERID, nivelAnsiedad);
             
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Dime qué necesitas: respiración, meditación o recuerdos.')
+                .reprompt('Dime qué necesitas: respiración, meditación o diario de recuerdos.')
                 .getResponse();
         } else {
             const speakOutput = 'Lo siento, no he entendido tu nivel de ansiedad. Dime un número del 1 al 10.';
@@ -412,7 +412,7 @@ const bienvenidaRecuerdosHandler = {
         if (GENEROADOLESCENTE == 'masculino')
             speakOutput += `¡${NOMBREADOLESCENTE}, bienvenido a tu diario de recuerdos! `;
         else if (GENEROADOLESCENTE == 'femenino')
-            speakOutput += `'${NOMBREADOLESCENTE}, bienvenida a tu diario de recuerdos! `;
+            speakOutput += `¡${NOMBREADOLESCENTE}, bienvenida a tu diario de recuerdos! `;
 
         speakOutput += 'Este es un lugar especial donde puedes guardar pequeños recuerdos que te hagan sentir bien y te ayuden a combatir la ansiedad y el estrés. Puedes añadir momentos que te hagan sonreír o te hagan sentir feliz. Puedes decir "Guardar un recuerdo" para añadir algo nuevo, o "Escuchar un recuerdo" para escuchar uno de tus recuerdos. ¿Qué te gustaría hacer?';
 
@@ -486,7 +486,7 @@ const capturarDescripcionRecuerdosHandler = {
 
         await bbdd.guardarRecuerdo(USERID, tituloRecuerdo, descripcionRecuerdo);
 
-        let speakOutput = `¡Listo! He guardato tu nuevo recuerdo. Recuerda que puedes escuchar tus recuerdos diciendo "Escuchar un recuerdo". `;
+        let speakOutput = `¡Listo! He guardado tu nuevo recuerdo. Ahora puedes escuchar tus recuerdos diciendo "Escuchar un recuerdo". `;
 
         speakOutput += '¿Qué necesitas ahora: respiración, meditación o escuchar un recuerdo?';
 
@@ -512,9 +512,14 @@ const recuperarRecuerdosHandler = {
         const attributes = handlerInput.attributesManager.getSessionAttributes();
         attributes.listaTitulosRecuerdo = listaTitulos;
         handlerInput.attributesManager.setSessionAttributes(attributes);
-        
-        const speakOutput = `Tu lista de recuerdos es: ${listaTitulos}. Para elegir cual quieres escuchar debes decir "Elijo mi recuerdo..."`;
 
+        let speakOutput = '';
+
+        if (listaTitulos != null)
+            speakOutput += `Tu lista de recuerdos es: ${listaTitulos}. Para elegir cual quieres escuchar debes decir "Elijo mi recuerdo..."`;
+        else
+            speakOutput += 'Aún no tienes ningún recuerdo. Para crear tu primer recuerdo debes decir "guardar un recuerdo". ¿Qué necesitas ahora: respiración, meditación o guardar un recuerdo? '
+        
         return handlerInput.responseBuilder
         .speak(speakOutput)
         .reprompt()

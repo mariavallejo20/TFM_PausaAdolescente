@@ -355,7 +355,8 @@ async function recuperarListaRecuerdos(idUsuario)
         if (data.Items && data.Items.length > 0) {
             const titles = data.Items.map(item => item.titulo);
             return titles.join(', ');
-        }
+        } else
+            return null;
     } catch (error) {
         console.error("Error al recuperar los recuerdos:", error);
         
