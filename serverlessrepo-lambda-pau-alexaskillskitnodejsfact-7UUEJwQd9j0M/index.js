@@ -350,7 +350,7 @@ const bienvenidaSesionMeditacionHandler = {
             speakOutput += `<audio src="soundbank://soundlibrary/gameshow/gameshow_01"/>`;
         }
 
-        speakOutput += 'Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"'
+        speakOutput += 'Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"';
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -432,9 +432,9 @@ const guardarRecuerdosHandler = {
     },
     async handle(handlerInput) {
 
-        let speakOutput = '¡Genial, vamos a añadir un nuevo recuerdo a tu diario de recuerdos! Para guardar un nuevo recordatorio a tu diario deberás indicar un título y su descripción. ';
+        let speakOutput = '¡Genial, vamos a añadir un nuevo recuerdo a tu diario de recuerdos! Para guardar un nuevo recuerdo a tu diario deberás indicar un título y su descripción. ';
 
-        speakOutput +=  'Para el título del recuerdo, por favor di: "El título de mi recuerdo es ...".';
+        speakOutput +=  'Para el título del recuerdo, por favor di: "El título de mi recuerdo es", seguido del título del recuerdo.';
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -459,8 +459,7 @@ const capturarTituloRecuerdosHandler = {
         attributes.tituloRecuerdo = tituloRecuerdo;
         handlerInput.attributesManager.setSessionAttributes(attributes);
 
-        let speakOutput = `¡Perfecto! ¿Cúal es la descripción para ${tituloRecuerdo}?. Para añadir la descripción debes decir: "La descripción de mi recuerdo es..."`;
-
+        let speakOutput = `¡Perfecto! ¿Cúal es la descripción para ${tituloRecuerdo}?. Para añadir la descripción debes decir: "La descripción de mi recuerdo es", seguido de la descripción del recuerdo.`;
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -486,9 +485,9 @@ const capturarDescripcionRecuerdosHandler = {
 
         await bbdd.guardarRecuerdo(USERID, tituloRecuerdo, descripcionRecuerdo);
 
-        let speakOutput = `¡Listo! He guardado tu nuevo recuerdo. Ahora puedes escuchar tus recuerdos diciendo "Escuchar un recuerdo". `;
+        let speakOutput = `¡Recuerdo guardado con éxito! Podrás eliminarlo en cualquier momento diciendo: 'Eliminar recuerdo', seguido del título del recuerdo. Para escuchar tus recuerdos, simplemente di 'Escuchar un recuerdo'. `;
 
-        speakOutput += '¿Qué necesitas ahora: respiración, meditación o escuchar un recuerdo?';
+        speakOutput += '¿Qué necesitas ahora?: respiración, meditación o escuchar un recuerdo';
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -506,7 +505,7 @@ const recuperarRecuerdosHandler = {
     },
     async handle(handlerInput) {
 
-        const listaTitulos = await bbdd.recuperarListaRecuerdos(USERID)
+        const listaTitulos = await bbdd.recuperarListaRecuerdos(USERID);
 
         // Guardar la lista de titulos en los atributos del handlerInput
         const attributes = handlerInput.attributesManager.getSessionAttributes();
@@ -516,9 +515,9 @@ const recuperarRecuerdosHandler = {
         let speakOutput = '';
 
         if (listaTitulos != null)
-            speakOutput += `Tu lista de recuerdos es: ${listaTitulos}. Para elegir cual quieres escuchar debes decir "Elijo mi recuerdo..."`;
+            speakOutput += `Tu lista de recuerdos es: ${listaTitulos}. Para elegir cual quieres escuchar debes decir: "Elijo mi recuerdo", seguido del título del recuerdo.`;
         else
-            speakOutput += 'Aún no tienes ningún recuerdo. Para crear tu primer recuerdo debes decir "guardar un recuerdo". ¿Qué necesitas ahora: respiración, meditación o guardar un recuerdo? '
+            speakOutput += 'Aún no tienes ningún recuerdo. Para crear tu primer recuerdo debes decir "guardar un recuerdo". ¿Qué necesitas ahora?: respiración, meditación o guardar un recuerdo. ';
         
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -538,21 +537,48 @@ const elegirRecuerdoHandler = {
 
         const recuerdoSeleccionado = handlerInput.requestEnvelope.request.intent.slots.recuerdo.value;
 
-        const descripcionRecuerdo = await bbdd.recuperarRecuerdo(USERID, recuerdoSeleccionado)
+        const descripcionRecuerdo = await bbdd.recuperarRecuerdo(USERID, recuerdoSeleccionado);
 
         let speakOutput = '';
 
         if(descripcionRecuerdo != null)
-            speakOutput +=  `Tu recuerdo es: ${descripcionRecuerdo} `;
+            speakOutput +=  `Tu recuerdo es: ${descripcionRecuerdo}. Espero que este recuerdo te haya hecho sentir mejor. ¿Qué necesitas ahora?: respiración, meditación, guardar o escuchar un recuerdo. `;
         else
         {
             // Recuperar la lista de titulos del manejador anterior de los atributos
             const attributes = handlerInput.attributesManager.getSessionAttributes();
             const listaTitulosRecuerdo = attributes.listaTitulosRecuerdo;
 
-            speakOutput += `No existe ningún recuerdo con ese título, vuelve a intentarlo. Tu lista de recuerdos es: ${listaTitulosRecuerdo}. Para elegir uno debes decir: "Elijo mi recuerdo..."`
+            speakOutput += `Lo siento, no se encontró ningún recuerdo con el título, vuelve a intentarlo. Tu lista de recuerdos es: ${listaTitulosRecuerdo}. Para elegir uno debes decir: "Elijo mi recuerdo..."`;
         }
-            
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+
+// Manejador para eliminar un recuerdo
+const eliminarRecuerdoHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'eliminarRecuerdo';
+    },
+    async handle(handlerInput) {
+
+        const recuerdoSeleccionado = handlerInput.requestEnvelope.request.intent.slots.recuerdo.value;
+
+        const eliminado = await bbdd.eliminarRecuerdo(USERID, recuerdoSeleccionado);
+
+        let speakOutput = '';
+
+        if(eliminado)
+            speakOutput = `Se ha eliminado con éxito el recuerdo: ${recuerdoSeleccionado}. ¿Qué necesitas ahora?: respiración, meditación, guardar o escuchar un recuerdo.`;
+        else
+            speakOutput = `Lo siento, no he podido eliminar el recuerdo ${recuerdoSeleccionado}. Inténtalo de nuevo.`;
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -710,6 +736,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         capturarDescripcionRecuerdosHandler,
         recuperarRecuerdosHandler,
         elegirRecuerdoHandler,
+        eliminarRecuerdoHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,

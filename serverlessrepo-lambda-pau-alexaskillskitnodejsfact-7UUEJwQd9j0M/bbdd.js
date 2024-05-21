@@ -387,6 +387,39 @@ async function recuperarRecuerdo(idUsuario, tituloSeleccionado)
     }
 }
 
+//Función para eliminar un recuerdo
+async function eliminarRecuerdo(idUsuario, tituloSeleccionado) {
+    const params = {
+        TableName: 'Recuerdo',
+        FilterExpression: 'titulo = :titulo AND idUsuario = :idUsuario',
+        ExpressionAttributeValues: {
+            ':titulo': tituloSeleccionado,
+            ':idUsuario': idUsuario
+        }
+    };
+
+    try {
+        const data = await dynamoDB.scan(params).promise();
+        if (data.Items && data.Items.length > 0) {
+            const idRecuerdo = data.Items[0].idRecuerdo; // Obtenemos el idRecuerdo del recuerdo seleccionado
+            const deleteParams = {
+                TableName: 'Recuerdo',
+                Key: {
+                    idRecuerdo: idRecuerdo
+                }
+            };
+
+            await dynamoDB.delete(deleteParams).promise();
+            return true;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error("Error al eliminar el recuerdo:", error);
+        return false;
+    }
+}
+
 
 module.exports = {
     getUsuario,
@@ -406,5 +439,7 @@ module.exports = {
     actualizarNumSesMeditacion,
     guardarRecuerdo,
     recuperarListaRecuerdos,
-    recuperarRecuerdo
+    recuperarRecuerdo,
+    eliminarRecuerdo
+
 };
