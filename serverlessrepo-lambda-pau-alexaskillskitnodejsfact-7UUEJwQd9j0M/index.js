@@ -421,7 +421,6 @@ const bienvenidaRecuerdosHandler = {
         else
             speakOutput += 'Este es un lugar especial donde puedes guardar pequeños momentos que te hagan sentir bien y te ayuden a combatir la ansiedad y el estrés. Puedes guardar recuerdos relacionados con tus sentimientos y luego escuchar un recuerdo según cómo te sientas en el momento. Solo di "Guardar un recuerdo" para añadir algo nuevo, o "Escuchar un recuerdo" para escuchar uno acorde a tu estado emocional actual. ¿Qué te gustaría hacer?';
 
-        
         return handlerInput.responseBuilder
         .speak(speakOutput)
         .reprompt()
@@ -564,40 +563,6 @@ const recuperarRecuerdosHandler = {
 
     }
 };
-
-// Manejador para escuchar un recuerdo
-const elegirRecuerdoHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'elegirRecuerdo';
-    },
-    async handle(handlerInput) {
-
-        const recuerdoSeleccionado = handlerInput.requestEnvelope.request.intent.slots.recuerdo.value;
-
-        const descripcionRecuerdo = await bbdd.recuperarRecuerdo(USERID, recuerdoSeleccionado);
-
-        let speakOutput = '';
-
-        if(descripcionRecuerdo != null)
-            speakOutput +=  `Tu recuerdo es: ${descripcionRecuerdo}. Espero que este recuerdo te haya hecho sentir mejor. ¿Qué necesitas ahora?: respiración, meditación, guardar o escuchar un recuerdo. `;
-        else
-        {
-            // Recuperar la lista de titulos del manejador anterior de los atributos
-            const attributes = handlerInput.attributesManager.getSessionAttributes();
-            const listaTitulosRecuerdo = attributes.listaTitulosRecuerdo;
-
-            speakOutput += `Lo siento, no se encontró ningún recuerdo con el título, vuelve a intentarlo. Tu lista de recuerdos es: ${listaTitulosRecuerdo}. Para elegir uno debes decir: "Elijo mi recuerdo..."`;
-        }
-
-        return handlerInput.responseBuilder
-        .speak(speakOutput)
-        .reprompt()
-        .getResponse();
-
-    }
-};
-
 
 // Manejador para eliminar un recuerdo
 const eliminarRecuerdoHandler = {
@@ -774,7 +739,6 @@ exports.handler = Alexa.SkillBuilders.custom()
         capturarDescripcionRecuerdosHandler,
         capturarSentimientoRecuerdosHandler,
         recuperarRecuerdosHandler,
-        elegirRecuerdoHandler,
         eliminarRecuerdoHandler,
         PauseIntentHandler,
         HelpIntentHandler,
