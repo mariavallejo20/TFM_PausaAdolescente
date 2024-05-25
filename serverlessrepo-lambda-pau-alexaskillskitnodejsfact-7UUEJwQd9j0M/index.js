@@ -407,6 +407,8 @@ const bienvenidaRecuerdosHandler = {
     },
     async handle(handlerInput) {
 
+        const numRecuerdos = await bbdd.getNumRecuerdos(USERID);
+
         let speakOutput = '';
 
         if (GENEROADOLESCENTE == 'masculino')
@@ -414,8 +416,12 @@ const bienvenidaRecuerdosHandler = {
         else if (GENEROADOLESCENTE == 'femenino')
             speakOutput += `¡${NOMBREADOLESCENTE}, bienvenida a tu diario de recuerdos! `;
 
-        speakOutput += 'Este es un lugar especial donde puedes guardar pequeños recuerdos que te hagan sentir bien y te ayuden a combatir la ansiedad y el estrés. Puedes añadir momentos que te hagan sonreír o te hagan sentir feliz. Puedes decir "Guardar un recuerdo" para añadir algo nuevo, o "Escuchar un recuerdo" para escuchar uno de tus recuerdos. ¿Qué te gustaría hacer?';
+        if(numRecuerdos != 0)
+            speakOutput += 'Recuerda que puedes guardar recuerdos relacionados con tus sentimientos y luego escuchar un recuerdo según cómo te sientas en el momento. ¿Qué te gustaría hacer?: "Guardar un recuerdo" o "Escuchar un recuerdo" ';
+        else
+            speakOutput += 'Este es un lugar especial donde puedes guardar pequeños momentos que te hagan sentir bien y te ayuden a combatir la ansiedad y el estrés. Puedes guardar recuerdos relacionados con tus sentimientos y luego escuchar un recuerdo según cómo te sientas en el momento. Solo di "Guardar un recuerdo" para añadir algo nuevo, o "Escuchar un recuerdo" para escuchar uno acorde a tu estado emocional actual. ¿Qué te gustaría hacer?';
 
+        
         return handlerInput.responseBuilder
         .speak(speakOutput)
         .reprompt()
@@ -432,7 +438,7 @@ const guardarRecuerdosHandler = {
     },
     async handle(handlerInput) {
 
-        let speakOutput = '¡Genial, vamos a añadir un nuevo recuerdo a tu diario de recuerdos! Para guardar un nuevo recuerdo a tu diario deberás indicar un título y su descripción. ';
+        let speakOutput = '¡Genial, vamos a añadir un nuevo recuerdo a tu diario de recuerdos! Para guardar un nuevo recuerdo a tu diario deberás indicar un título, su descripción y un sentimiento relacionado. ';
 
         speakOutput +=  'Para el título del recuerdo, por favor di: "El título de mi recuerdo es", seguido del título del recuerdo.';
 
@@ -477,15 +483,47 @@ const capturarDescripcionRecuerdosHandler = {
     },
     async handle(handlerInput) {
 
-        // Recuperar el título del manejador anterior de los atributos
-        const attributes = handlerInput.attributesManager.getSessionAttributes();
-        const tituloRecuerdo = attributes.tituloRecuerdo;
-
         const descripcionRecuerdo = handlerInput.requestEnvelope.request.intent.slots.descripcionRecuerdo.value;
 
-        await bbdd.guardarRecuerdo(USERID, tituloRecuerdo, descripcionRecuerdo);
+        // Guardar la descripción en los atributos del handlerInput
+        const attributes = handlerInput.attributesManager.getSessionAttributes();
+        attributes.descripcionRecuerdo = descripcionRecuerdo;
+        handlerInput.attributesManager.setSessionAttributes(attributes);
 
-        let speakOutput = `¡Recuerdo guardado con éxito! Podrás eliminarlo en cualquier momento diciendo: 'Eliminar recuerdo', seguido del título del recuerdo. Para escuchar tus recuerdos, simplemente di 'Escuchar un recuerdo'. `;
+        let speakOutput = `¡Perfecto, ya tenemos la descripción! Ahora solo di: "se relaciona con el sentimiento", seguido de: `;
+
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `"feliz, triste, estresado, motivado o agotado", para guardar el recuerdo. `;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `"feliz, triste, estresada, motivada o agotada", para guardar el recuerdo.`;
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+const capturarSentimientoRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'capturarSentimientoRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        // Recuperar el título y la descripción del manejador anterior de los atributos
+        const attributes = handlerInput.attributesManager.getSessionAttributes();
+        const tituloRecuerdo = attributes.tituloRecuerdo;
+        const descripcionRecuerdo = attributes.descripcionRecuerdo;
+
+        const sentimientoRecuerdo = handlerInput.requestEnvelope.request.intent.slots.sentimientoRecuerdo.value;
+
+        await bbdd.guardarRecuerdo(USERID, tituloRecuerdo, descripcionRecuerdo, sentimientoRecuerdo);
+
+        await bbdd.actualizarNumRecuerdos(USERID);
+
+        let speakOutput = `¡Recuerdo guardado con éxito! Podrás eliminarlo en cualquier momento diciendo: 'Eliminar recuerdo', seguido del título del recuerdo. Para escuchar un recuerdo, simplemente di 'Escuchar un recuerdo'. `;
 
         speakOutput += '¿Qué necesitas ahora?: respiración, meditación o escuchar un recuerdo';
 
@@ -505,20 +543,20 @@ const recuperarRecuerdosHandler = {
     },
     async handle(handlerInput) {
 
-        const listaTitulos = await bbdd.recuperarListaRecuerdos(USERID);
+        const sentimientoActual = await bbdd.getSentimientoUsuario(USERID);
 
-        // Guardar la lista de titulos en los atributos del handlerInput
-        const attributes = handlerInput.attributesManager.getSessionAttributes();
-        attributes.listaTitulosRecuerdo = listaTitulos;
-        handlerInput.attributesManager.setSessionAttributes(attributes);
+        const recuerdo = await bbdd.recuperarRecuerdoPorSentimiento(USERID, sentimientoActual);
 
         let speakOutput = '';
 
-        if (listaTitulos != null)
-            speakOutput += `Tu lista de recuerdos es: ${listaTitulos}. Para elegir cual quieres escuchar debes decir: "Elijo mi recuerdo", seguido del título del recuerdo.`;
+        if(recuerdo != null)
+            speakOutput += `Para ayudarte con tu sentimiento actual, aquí tienes un recuerdo relacionado con ${sentimientoActual}. <break time="1s"/> El título es <prosody rate="slow">'${recuerdo.titulo}'</prosody> y la descripción es <prosody rate="slow">'${recuerdo.descripcion}'</prosody>. <break time="1s"/> Espero que este recuerdo te haya hecho sentir mejor.`;
         else
-            speakOutput += 'Aún no tienes ningún recuerdo. Para crear tu primer recuerdo debes decir "guardar un recuerdo". ¿Qué necesitas ahora?: respiración, meditación o guardar un recuerdo. ';
-        
+            speakOutput += `Aún no tienes ningún recuerdo relacionado con tu sentimiento actual ${sentimientoActual}. Para crear tu primer recuerdo debes decir "guardar un recuerdo". `;
+
+
+        speakOutput += '¿Qué necesitas ahora?: respiración, meditación, guardar o escuchar un recuerdo.';
+
         return handlerInput.responseBuilder
         .speak(speakOutput)
         .reprompt()
@@ -734,6 +772,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         guardarRecuerdosHandler,
         capturarTituloRecuerdosHandler,
         capturarDescripcionRecuerdosHandler,
+        capturarSentimientoRecuerdosHandler,
         recuperarRecuerdosHandler,
         elegirRecuerdoHandler,
         eliminarRecuerdoHandler,
