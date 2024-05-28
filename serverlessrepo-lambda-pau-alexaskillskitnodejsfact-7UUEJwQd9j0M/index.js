@@ -192,6 +192,7 @@ const dedicacionDiariaHandler = {
     }
 };
 
+
 // Manejador para obtener el sentimiento del día
 const obtenerSentimientoDiaHandler = {
     canHandle(handlerInput) {
@@ -202,10 +203,33 @@ const obtenerSentimientoDiaHandler = {
         const sentimientoDia = handlerInput.requestEnvelope.request.intent.slots.sentimiento.value;
         
         if (sentimientoDia) {
-            const speakOutput = `¡De acuerdo, añadiré ${sentimientoDia} a las estadísticas de la semana! <break time="1s"/> En una escala del 1 al 10, ¿Cuánta ansiedad o estrés experimentas en este momento? `;
+
+            let speakOutput = `¡De acuerdo, añadiré ${sentimientoDia} a las estadísticas de la semana! <break time="1s"/>`;
+
+            if (sentimientoDia != 'feliz' || sentimientoDia != 'motivado' || sentimientoDia != 'motivada')
+            {
+                const recuerdo = await bbdd.recuperarRecuerdoPorSentimiento(USERID, sentimientoDia);
+                if (recuerdo != null)
+                {
+                    speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
+                    speakOutput += 'He notado que podrías necesitar un impulso de ánimo. He preparado un recuerdo especial para ti, que espero que te haga sentir mejor. <break time="1s"/>';
+                    speakOutput += `Recuerda que en un momento que te sentiste ${sentimientoDia}, guardaste este recuerdo: <break time="1s"/> `;
+                    speakOutput += `<prosody rate="slow">${recuerdo.descripcion}</prosody> <break time="1s"/>`;
+                    speakOutput += 'Espero que este recuerdo te haya traído un poco de alegría. ¡Ánimo! <break time="1s"/>';
+                    speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
+                }
+                
+            }
+
+            speakOutput += `En una escala del 1 al 10, ¿Cuánta ansiedad o estrés experimentas en este momento? `;
             
-            // Añadimos el sentimiendo del día del usuario en fucnión del idUsuario
+            // Añadimos el sentimiendo del día del usuario en función del idUsuario
             await bbdd.addSentimientoDiaUsuario(USERID, sentimientoDia);
+
+            // Guardar sentimientoDia en los atributos de sesión
+            const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+            sessionAttributes.sentimientoDia = sentimientoDia;
+            handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
             
             return handlerInput.responseBuilder
                 .speak(speakOutput)
@@ -219,6 +243,7 @@ const obtenerSentimientoDiaHandler = {
                 .getResponse();
         }
     }
+
 };
 
 // Manejador para obtener el nivel de ansiedad del día
