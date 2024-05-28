@@ -192,6 +192,7 @@ const dedicacionDiariaHandler = {
     }
 };
 
+
 // Manejador para obtener el sentimiento del día
 const obtenerSentimientoDiaHandler = {
     canHandle(handlerInput) {
@@ -202,10 +203,33 @@ const obtenerSentimientoDiaHandler = {
         const sentimientoDia = handlerInput.requestEnvelope.request.intent.slots.sentimiento.value;
         
         if (sentimientoDia) {
-            const speakOutput = `¡De acuerdo, añadiré ${sentimientoDia} a las estadísticas de la semana! <break time="1s"/> En una escala del 1 al 10, ¿Cuánta ansiedad o estrés experimentas en este momento? `;
+
+            let speakOutput = `¡De acuerdo, añadiré ${sentimientoDia} a las estadísticas de la semana! <break time="1s"/>`;
+
+            if (sentimientoDia != 'feliz' || sentimientoDia != 'motivado' || sentimientoDia != 'motivada')
+            {
+                const recuerdo = await bbdd.recuperarRecuerdoPorSentimiento(USERID, sentimientoDia);
+                if (recuerdo != null)
+                {
+                    speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
+                    speakOutput += 'He notado que podrías necesitar un impulso de ánimo. He preparado un recuerdo especial para ti, que espero que te haga sentir mejor. <break time="1s"/>';
+                    speakOutput += `Recuerda que en un momento que te sentiste ${sentimientoDia}, guardaste este recuerdo: <break time="1s"/> `;
+                    speakOutput += `<prosody rate="slow">${recuerdo.descripcion}</prosody> <break time="1s"/>`;
+                    speakOutput += 'Espero que este recuerdo te haya traído un poco de alegría. ¡Ánimo! <break time="1s"/>';
+                    speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
+                }
+                
+            }
+
+            speakOutput += `En una escala del 1 al 10, ¿Cuánta ansiedad o estrés experimentas en este momento? `;
             
-            // Añadimos el sentimiendo del día del usuario en fucnión del idUsuario
+            // Añadimos el sentimiendo del día del usuario en función del idUsuario
             await bbdd.addSentimientoDiaUsuario(USERID, sentimientoDia);
+
+            // Guardar sentimientoDia en los atributos de sesión
+            const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+            sessionAttributes.sentimientoDia = sentimientoDia;
+            handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
             
             return handlerInput.responseBuilder
                 .speak(speakOutput)
@@ -219,6 +243,7 @@ const obtenerSentimientoDiaHandler = {
                 .getResponse();
         }
     }
+
 };
 
 // Manejador para obtener el nivel de ansiedad del día
@@ -231,14 +256,14 @@ const nivelAnsiedadDiaHandler = {
         const nivelAnsiedad = handlerInput.requestEnvelope.request.intent.slots.nivelAnsiedad.value;
         
         if (nivelAnsiedad) {
-            const speakOutput = `${nivelAnsiedad}, entendido. Vamos a trabajar en ello juntos. <break time="1s"/> ¿Qué necesitas?: respiración, meditación, juego o terapia`;
+            const speakOutput = `${nivelAnsiedad}, entendido. Vamos a trabajar en ello juntos. <break time="1s"/> ¿Qué necesitas?: respiración, meditación o diario de recuerdos`;
             
             // Añadimos el nivel de ansiedad del usuario en fucnión del idUsuario
             await bbdd.addnivelAnsiedadUsuario(USERID, nivelAnsiedad);
             
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Dime qué necesitas: : respiración, meditación, juego o terapia.')
+                .reprompt('Dime qué necesitas: respiración, meditación o diario de recuerdos.')
                 .getResponse();
         } else {
             const speakOutput = 'Lo siento, no he entendido tu nivel de ansiedad. Dime un número del 1 al 10.';
@@ -266,14 +291,24 @@ const bienvenidaSesionRespiracionHandler = {
 
         let speakOutput = '';
 
-        if (GENEROADOLESCENTE == 'masculino')
-            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a una sesión de respiración guiada. Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"`;
-        else if (GENEROADOLESCENTE == 'femenino')
-            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a una sesión de respiración guiada. Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"`;
+        const numSesUsuario = await bbdd.actualizarNumSesRespiracion(USERID);
 
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a una sesión de respiración guiada <break time="1s"/> `;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a una sesión de respiración guiada <break time="1s"/> `;
+
+        if (numSesUsuario % 5 == 0) {
+            speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_positive_response_03"/>`;
+            speakOutput += `¡Felicidades, vas a realizar tu sesión de respiración número ${numSesUsuario}! `;
+            speakOutput += `<audio src="soundbank://soundlibrary/gameshow/gameshow_01"/>`;
+        }
+        
+        speakOutput += 'Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"';
+        
         return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Dime qué necesitas: : respiración, meditación, juego o terapia.')
+                .reprompt('Dime qué necesitas: : "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"')
                 .getResponse();
 
     }
@@ -325,16 +360,26 @@ const bienvenidaSesionMeditacionHandler = {
     },
     async handle(handlerInput) {
 
+        const numSesUsuario = await bbdd.actualizarNumSesMeditacion(USERID);
+
         let speakOutput = '';
 
         if (GENEROADOLESCENTE == 'masculino')
-            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenido a tu sesión de meditación para reducir la ansiedad y el estrés.`;
         else if (GENEROADOLESCENTE == 'femenino')
-            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a tu sesión de meditación para reducir la ansiedad y el estrés. Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"`;
+            speakOutput += `${NOMBREADOLESCENTE}, bienvenida a tu sesión de meditación para reducir la ansiedad y el estrés. `;
+
+        if (numSesUsuario % 5 == 0) {
+            speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_positive_response_03"/>`;
+            speakOutput += `¡Felicidades, vas a realizar tu sesión de meditación número ${numSesUsuario}! `;
+            speakOutput += `<audio src="soundbank://soundlibrary/gameshow/gameshow_01"/>`;
+        }
+
+        speakOutput += 'Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"';
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
-        .reprompt('Dime qué necesitas: : respiración, meditación, juego o terapia.')
+        .reprompt('Dime qué necesitas: : "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"')
         .getResponse();
 
     }
@@ -356,9 +401,12 @@ const sesionMeditacionHandler = {
 
         let speakOutput = `Genial, haremos una sesión de relajación sobre ${tema}. Antes de comenzar, asegúrate de estar en un lugar tranquilo donde puedas relajarte y estar en silencio. Te iré guiando por la sesión y dejándote tiempo para que sigas mis indicaciones. <break time="1s"/> Vamos a empezar: <break time="1s"/>`;
 
-        speakOutput += `<prosody rate="slow">${inicio}</prosody> <break time="10s"/> <break time="10s"/> `;
-        speakOutput += `<prosody rate="slow">${refuerzo}</prosody> <break time="10s"/> <break time="10s"/> `;
-        speakOutput += `<prosody rate="slow">${fin}</prosody> <break time="10s"/> <break time="10s"/> `;
+        speakOutput += `<prosody rate="slow">${inicio}</prosody>`;
+        speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_waiting_loop_30s_01"/>`;
+        speakOutput += `<prosody rate="slow">${refuerzo}</prosody>`;
+        speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_waiting_loop_30s_01"/>`;
+        speakOutput += `<prosody rate="slow">${fin}</prosody>`;
+        speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_waiting_loop_30s_01"/>`;
 
         speakOutput += 'Fin de la sesión de meditación. Recuerda que siempre puedes regresar a este lugar de tranquilidad en cualquier momento que lo necesites. La paz está dentro de ti, esperando ser encontrada cada vez que busques en tu interior.';
         
@@ -372,9 +420,205 @@ const sesionMeditacionHandler = {
 
 
 //*****************************************************************************************************************/
-//                                              MANEJADORES BASE
+//                              MANEJADORES PARA DIARIO DE RECUERDOS
 //*****************************************************************************************************************/
 
+
+// Manejador para dar la bienvenida al diario de recuerdos y elegir la acción deseada
+const bienvenidaRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        const numRecuerdos = await bbdd.getNumRecuerdos(USERID);
+
+        let speakOutput = '';
+
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `¡${NOMBREADOLESCENTE}, bienvenido a tu diario de recuerdos! `;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `¡${NOMBREADOLESCENTE}, bienvenida a tu diario de recuerdos! `;
+
+        if(numRecuerdos != 0)
+            speakOutput += 'Recuerda que puedes guardar recuerdos relacionados con tus sentimientos y luego escuchar un recuerdo según cómo te sientas en el momento. ¿Qué te gustaría hacer?: "Guardar un recuerdo" o "Escuchar un recuerdo" ';
+        else
+            speakOutput += 'Este es un lugar especial donde puedes guardar pequeños momentos que te hagan sentir bien y te ayuden a combatir la ansiedad y el estrés. Puedes guardar recuerdos relacionados con tus sentimientos y luego escuchar un recuerdo según cómo te sientas en el momento. Solo di "Guardar un recuerdo" para añadir algo nuevo, o "Escuchar un recuerdo" para escuchar uno acorde a tu estado emocional actual. ¿Qué te gustaría hacer?';
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+// Manejador para dar guardar recuerdos
+const guardarRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'guardarRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        let speakOutput = '¡Genial, vamos a añadir un nuevo recuerdo a tu diario de recuerdos! Para guardar un nuevo recuerdo a tu diario deberás indicar un título, su descripción y un sentimiento relacionado. ';
+
+        speakOutput +=  'Para el título del recuerdo, por favor di: "El título de mi recuerdo es", seguido del título del recuerdo.';
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+// Manejador para dar titulo a los recuerdos
+const capturarTituloRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'capturarTituloRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        const tituloRecuerdo = handlerInput.requestEnvelope.request.intent.slots.tituloRecuerdo.value;
+
+        // Guardar el título en los atributos del handlerInput
+        const attributes = handlerInput.attributesManager.getSessionAttributes();
+        attributes.tituloRecuerdo = tituloRecuerdo;
+        handlerInput.attributesManager.setSessionAttributes(attributes);
+
+        let speakOutput = `¡Perfecto! ¿Cúal es la descripción para ${tituloRecuerdo}?. Para añadir la descripción debes decir: "La descripción de mi recuerdo es", seguido de la descripción del recuerdo.`;
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+// Manejador para dar descripcion a los recuerdos
+const capturarDescripcionRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'capturarDescripcionRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        const descripcionRecuerdo = handlerInput.requestEnvelope.request.intent.slots.descripcionRecuerdo.value;
+
+        // Guardar la descripción en los atributos del handlerInput
+        const attributes = handlerInput.attributesManager.getSessionAttributes();
+        attributes.descripcionRecuerdo = descripcionRecuerdo;
+        handlerInput.attributesManager.setSessionAttributes(attributes);
+
+        let speakOutput = `¡Perfecto, ya tenemos la descripción! Ahora solo di: "se relaciona con el sentimiento", seguido de: `;
+
+        if (GENEROADOLESCENTE == 'masculino')
+            speakOutput += `"feliz, triste, estresado, motivado o agotado", para guardar el recuerdo. `;
+        else if (GENEROADOLESCENTE == 'femenino')
+            speakOutput += `"feliz, triste, estresada, motivada o agotada", para guardar el recuerdo.`;
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+const capturarSentimientoRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'capturarSentimientoRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        // Recuperar el título y la descripción del manejador anterior de los atributos
+        const attributes = handlerInput.attributesManager.getSessionAttributes();
+        const tituloRecuerdo = attributes.tituloRecuerdo;
+        const descripcionRecuerdo = attributes.descripcionRecuerdo;
+
+        const sentimientoRecuerdo = handlerInput.requestEnvelope.request.intent.slots.sentimientoRecuerdo.value;
+
+        await bbdd.guardarRecuerdo(USERID, tituloRecuerdo, descripcionRecuerdo, sentimientoRecuerdo);
+
+        await bbdd.actualizarNumRecuerdos(USERID);
+
+        let speakOutput = `¡Recuerdo guardado con éxito! Podrás eliminarlo en cualquier momento diciendo: 'Eliminar recuerdo', seguido del título del recuerdo. Para escuchar un recuerdo, simplemente di 'Escuchar un recuerdo'. `;
+
+        speakOutput += '¿Qué necesitas ahora?: respiración, meditación o escuchar un recuerdo';
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+// Manejador para dar recuperar recuerdos
+const recuperarRecuerdosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'recuperarRecuerdos';
+    },
+    async handle(handlerInput) {
+
+        const sentimientoActual = await bbdd.getSentimientoUsuario(USERID);
+
+        const recuerdo = await bbdd.recuperarRecuerdoPorSentimiento(USERID, sentimientoActual);
+
+        let speakOutput = '';
+
+        if(recuerdo != null)
+            speakOutput += `Para ayudarte con tu sentimiento actual, aquí tienes un recuerdo relacionado con ${sentimientoActual}. <break time="1s"/> El título es <prosody rate="slow">'${recuerdo.titulo}'</prosody> y la descripción es <prosody rate="slow">'${recuerdo.descripcion}'</prosody>. <break time="1s"/> Espero que este recuerdo te haya hecho sentir mejor.`;
+        else
+            speakOutput += `Aún no tienes ningún recuerdo relacionado con tu sentimiento actual ${sentimientoActual}. Para crear tu primer recuerdo debes decir "guardar un recuerdo". `;
+
+
+        speakOutput += '¿Qué necesitas ahora?: respiración, meditación, guardar o escuchar un recuerdo.';
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+// Manejador para eliminar un recuerdo
+const eliminarRecuerdoHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'eliminarRecuerdo';
+    },
+    async handle(handlerInput) {
+
+        const recuerdoSeleccionado = handlerInput.requestEnvelope.request.intent.slots.recuerdo.value;
+
+        const eliminado = await bbdd.eliminarRecuerdo(USERID, recuerdoSeleccionado);
+
+        let speakOutput = '';
+
+        if(eliminado)
+            speakOutput = `Se ha eliminado con éxito el recuerdo: ${recuerdoSeleccionado}. ¿Qué necesitas ahora?: respiración, meditación, guardar o escuchar un recuerdo.`;
+        else
+            speakOutput = `Lo siento, no he podido eliminar el recuerdo ${recuerdoSeleccionado}. Inténtalo de nuevo.`;
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+//*****************************************************************************************************************/
+//                                              MANEJADORES BASE
+//*****************************************************************************************************************/
 
 const PauseIntentHandler = {
     canHandle(handlerInput) {
@@ -514,10 +758,13 @@ exports.handler = Alexa.SkillBuilders.custom()
         sesionRespiracionHandler,
         bienvenidaSesionMeditacionHandler,
         sesionMeditacionHandler,
-        juegosHandler,
-        respuestaJuegoHandler,
-        // bienvenidaJuegosHandler,
-        // solucionJuegoHandler,
+        bienvenidaRecuerdosHandler,
+        guardarRecuerdosHandler,
+        capturarTituloRecuerdosHandler,
+        capturarDescripcionRecuerdosHandler,
+        capturarSentimientoRecuerdosHandler,
+        recuperarRecuerdosHandler,
+        eliminarRecuerdoHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,

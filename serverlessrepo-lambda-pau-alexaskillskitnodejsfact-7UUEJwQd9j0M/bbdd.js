@@ -9,7 +9,10 @@ async function crearUsuario(idUsuario) {
     const params = {
         TableName: 'Usuario',
         Item: {
-            idUsuario: idUsuario
+            idUsuario: idUsuario,
+            numSesRespiracion: 0,
+            numSesMeditacion: 0,
+            numRecuerdos: 0
         }
     };
 
@@ -193,6 +196,41 @@ async function getNombreUsuario(idUsuario) {
     }
 }
 
+// Función para obtener el sentimiento actual de un usuario a partir de su idUsuario
+async function getSentimientoUsuario(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            ProjectionExpression: 'sentimientoDia'
+        };
+        const data = await dynamoDB.get(params).promise();
+        return data.Item ? data.Item.sentimientoDia : null;
+    } catch (error) {
+        console.error('Error al obtener sentimiento del usuario en DynamoDB:', error);
+        throw error;
+    }
+}
+
+async function getNumRecuerdos(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            ProjectionExpression: 'numRecuerdos'
+        };
+        const data = await dynamoDB.get(params).promise();
+        return data.Item ? data.Item.numRecuerdos : 0; // Retorna numRecuerdos o 0 si no existe
+    } catch (error) {
+        console.error('Error al obtener numRecuerdos de DynamoDB:', error);
+        throw error;
+    }
+}
+
 
 //*****************************************************************************************************************/
 //                              FUNCIONES PARA OBTENER SESIÓN DE RESPIRACIÓN
@@ -218,7 +256,7 @@ async function getSesionRespiracion(duracion) {
 }
 
 
-// Función independiente para consultar la base de datos
+// Función para obtener la musica en funcion de la duracion
 async function getMusicaSesionRespiracion(duracion) {
     const params = {
         TableName: 'SesionRespiracion',
@@ -265,7 +303,183 @@ async function getSesionMeditacion(tema) {
     }
 }
 
+//*****************************************************************************************************************/
+//                              FUNCIONES PARA RECUENTO DE SESIONES
+//*****************************************************************************************************************/
 
+async function actualizarNumSesRespiracion(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            UpdateExpression: 'SET numSesRespiracion = numSesRespiracion + :inc',
+            ExpressionAttributeValues: {
+                ':inc': 1
+            },
+            ReturnValues: 'ALL_NEW' // Para obtener el nuevo valor actualizado
+        };
+        const data = await dynamoDB.update(params).promise();
+        return data.Attributes.numSesRespiracion; // Retorna el nuevo valor de numSesRespiracion
+    } catch (error) {
+        console.error('Error al actualizar numSesRespiracion en DynamoDB:', error);
+        throw error;
+    }
+}
+
+async function actualizarNumSesMeditacion(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            UpdateExpression: 'SET numSesMeditacion = numSesMeditacion + :inc',
+            ExpressionAttributeValues: {
+                ':inc': 1
+            },
+            ReturnValues: 'ALL_NEW' // Para obtener el nuevo valor actualizado
+        };
+        const data = await dynamoDB.update(params).promise();
+        return data.Attributes.numSesMeditacion; // Retorna el nuevo valor de numSesMeditacion
+    } catch (error) {
+        console.error('Error al actualizar numSesMeditacion en DynamoDB:', error);
+        throw error;
+    }
+}
+
+// Función para actualizar el numero de recuerdos de un usuario
+async function actualizarNumRecuerdos(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            UpdateExpression: 'SET numRecuerdos = numRecuerdos + :inc',
+            ExpressionAttributeValues: {
+                ':inc': 1
+            }
+        };
+        const data = await dynamoDB.update(params).promise();
+    } catch (error) {
+        console.error('Error al actualizar numRecuerdos en DynamoDB:', error);
+        throw error;
+    }
+}
+
+//*****************************************************************************************************************/
+//                              FUNCIONES PARA DIARIO DE RECUERDOS
+//*****************************************************************************************************************/
+
+// Función para guardar un nuevo recuerdo en la base de datos
+async function guardarRecuerdo (idUsuario, titulo, descripcion, sentimientoRelacionado)
+{
+   
+    const params = {
+        TableName: 'Recuerdo',
+        Item: {
+            idRecuerdo: Math.random().toString(36).substring(7), // ID único para cada recuerdo
+            idUsuario: idUsuario,
+            titulo: titulo,
+            descripcion: descripcion,
+            sentimientoRelacionado: sentimientoRelacionado
+        }
+    };
+
+    try {
+        await dynamoDB.put(params).promise();
+    } catch (error) {
+        console.error("Error al guardar el recuerdo:", error);
+    }
+}
+
+// Función para recuperar la lista de recuerdos de un usuario
+async function recuperarListaRecuerdos(idUsuario)
+{
+    const params = {
+        TableName: 'Recuerdo',
+        FilterExpression: 'idUsuario = :idUsuario',
+        ProjectionExpression: 'titulo', 
+        ExpressionAttributeValues: {
+            ':idUsuario': idUsuario
+        }
+    };
+    try {
+        const data = await dynamoDB.scan(params).promise();
+        if (data.Items && data.Items.length > 0) {
+            const titles = data.Items.map(item => item.titulo);
+            return titles.join(', ');
+        } else
+            return null;
+    } catch (error) {
+        console.error("Error al recuperar los recuerdos:", error);
+        
+    }
+}
+
+// Función para recuperar un recuerdo de la base de datos
+async function recuperarRecuerdoPorSentimiento(idUsuario, sentimientoRelacionado) 
+{
+    const params = {
+        TableName: 'Recuerdo',
+        FilterExpression: 'sentimientoRelacionado = :sentimientoRelacionado AND idUsuario = :idUsuario',
+        ExpressionAttributeValues: {
+            ':sentimientoRelacionado': sentimientoRelacionado,
+            ':idUsuario': idUsuario
+        }
+    };
+
+    try {
+        const data = await dynamoDB.scan(params).promise();
+        if (data.Items && data.Items.length > 0) {
+            // Seleccionar un recuerdo aleatorio
+            const recuerdoAleatorio = data.Items[Math.floor(Math.random() * data.Items.length)];
+            return {
+                titulo: recuerdoAleatorio.titulo,
+                descripcion: recuerdoAleatorio.descripcion
+            };
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error("Error al recuperar los recuerdos:", error);
+    }
+}
+
+//Función para eliminar un recuerdo
+async function eliminarRecuerdo(idUsuario, tituloSeleccionado) {
+    const params = {
+        TableName: 'Recuerdo',
+        FilterExpression: 'titulo = :titulo AND idUsuario = :idUsuario',
+        ExpressionAttributeValues: {
+            ':titulo': tituloSeleccionado,
+            ':idUsuario': idUsuario
+        }
+    };
+
+    try {
+        const data = await dynamoDB.scan(params).promise();
+        if (data.Items && data.Items.length > 0) {
+            const idRecuerdo = data.Items[0].idRecuerdo; // Obtenemos el idRecuerdo del recuerdo seleccionado
+            const deleteParams = {
+                TableName: 'Recuerdo',
+                Key: {
+                    idRecuerdo: idRecuerdo
+                }
+            };
+
+            await dynamoDB.delete(deleteParams).promise();
+            return true;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error("Error al eliminar el recuerdo:", error);
+        return false;
+    }
+}
 
 
 module.exports = {
@@ -279,7 +493,17 @@ module.exports = {
     addnivelAnsiedadUsuario,
     getGeneroUsuario,
     getNombreUsuario,
+    getSentimientoUsuario,
+    getNumRecuerdos,
     getSesionRespiracion,
     getMusicaSesionRespiracion,
-    getSesionMeditacion
+    getSesionMeditacion,
+    actualizarNumSesRespiracion,
+    actualizarNumSesMeditacion,
+    actualizarNumRecuerdos,
+    guardarRecuerdo,
+    recuperarListaRecuerdos,
+    recuperarRecuerdoPorSentimiento,
+    eliminarRecuerdo
+
 };
