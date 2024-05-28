@@ -12,7 +12,8 @@ async function crearUsuario(idUsuario) {
             idUsuario: idUsuario,
             numSesRespiracion: 0,
             numSesMeditacion: 0,
-            numRecuerdos: 0
+            numRecuerdos: 0,
+            numInteracciones: 0
         }
     };
 
@@ -231,6 +232,40 @@ async function getNumRecuerdos(idUsuario) {
     }
 }
 
+// Función para obtener el número de interacciones de un usuario
+async function getNumInteracciones(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            ProjectionExpression: 'numInteracciones'
+        };
+        const data = await dynamoDB.get(params).promise();
+        return data.Item ? data.Item.numInteracciones : 0;
+    } catch (error) {
+        console.error('Error al obtener numInteracciones de DynamoDB:', error);
+        throw error;
+    }
+}
+
+async function getObjetivoUsuario(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            ProjectionExpression: 'objetivo'
+        };
+        const data = await dynamoDB.get(params).promise();
+        return data.Item ? data.Item.objetivo : 0;
+    } catch (error) {
+        console.error('Error al obtener objetivo de DynamoDB:', error);
+        throw error;
+    }
+}
 
 //*****************************************************************************************************************/
 //                              FUNCIONES PARA OBTENER SESIÓN DE RESPIRACIÓN
@@ -369,6 +404,26 @@ async function actualizarNumRecuerdos(idUsuario) {
     }
 }
 
+// Función para actualizar el numero de interacciones con la skill de un usuario
+async function actualizarNumInteracciones(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            UpdateExpression: 'SET numInteracciones = numInteracciones + :inc',
+            ExpressionAttributeValues: {
+                ':inc': 1
+            }
+        };
+        const data = await dynamoDB.update(params).promise();
+    } catch (error) {
+        console.error('Error al actualizar numInteracciones en DynamoDB:', error);
+        throw error;
+    }
+}
+
 //*****************************************************************************************************************/
 //                              FUNCIONES PARA DIARIO DE RECUERDOS
 //*****************************************************************************************************************/
@@ -481,6 +536,87 @@ async function eliminarRecuerdo(idUsuario, tituloSeleccionado) {
     }
 }
 
+//*****************************************************************************************************************/
+//                              FUNCIONES PARA HISTORIAL DE SENTIMIENTOS
+//*****************************************************************************************************************/
+
+async function addHistorial (idUsuario, nivelAnsiedad, sentimientoDia) {
+    try {
+        const params = {
+            TableName: 'Historial',
+            Item: {
+                'idHistorial': Math.random().toString(36).substring(7), // ID único para cada entrada del historial
+                'idUsuario': idUsuario,
+                'nivelAnsiedad': nivelAnsiedad,
+                'sentimientoDia': sentimientoDia,
+                'timestamp': new Date().toISOString()  // Añadimos un campo timestamp para mantener el historial ordenado por fecha
+            }
+        };
+        await dynamoDB.put(params).promise();
+    } catch (error) {
+        console.error('Error al añadir una nueva entrada a la tabla Historial en DynamoDB:', error);
+        throw error;
+    }
+}
+
+async function getHistorial (idUsuario) {
+    try {
+        const params = {
+            TableName: 'Historial',
+            FilterExpression: '#idUsuario = :idUsuario',
+            ExpressionAttributeNames: {
+                '#idUsuario': 'idUsuario',
+                '#ts': 'timestamp' // Alias para la palabra reservada
+            },
+            ExpressionAttributeValues: {
+                ':idUsuario': idUsuario
+            },
+            ProjectionExpression: 'sentimientoDia, nivelAnsiedad, #ts' // Usar el alias en la expresión
+        };
+        const data = await dynamoDB.scan(params).promise();
+        
+        // Ordenar por timestamp descendente y obtener las últimas 7 entradas
+        const sortedItems = data.Items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const last7Entries = sortedItems.slice(0, 7).map(entry => ({
+            sentimientoDia: entry.sentimientoDia,
+            nivelAnsiedad: entry.nivelAnsiedad
+        }));
+        
+        return last7Entries;
+    } catch (error) {
+        console.error('Error al recuperar las últimas 7 entradas de DynamoDB:', error);
+        throw error;
+    }
+}
+
+function calcularSentimientoMasFrecuente(historial) {
+    if (!historial || historial.length === 0) return [];
+
+    const sentimentCounts = historial.reduce((acc, entry) => {
+        acc[entry.sentimientoDia] = (acc[entry.sentimientoDia] || 0) + 1;
+        return acc;
+    }, {});
+
+    const maxCount = Math.max(...Object.values(sentimentCounts));
+    const mostFrequentSentiments = Object.keys(sentimentCounts).filter(sentiment => sentimentCounts[sentiment] === maxCount);
+
+    if (mostFrequentSentiments.length === 0) {
+        return '';
+    } else if (mostFrequentSentiments.length === 1) {
+        return mostFrequentSentiments[0];
+    } else {
+        return mostFrequentSentiments.slice(0, -1).join(', ') + ' y ' + mostFrequentSentiments[mostFrequentSentiments.length - 1];
+    }
+}
+
+function calcularMediaNivelAnsiedad(historial) {
+    if (!historial || historial.length === 0) return null;
+
+    const totalAnxietyLevel = historial.reduce((sum, entry) => sum + parseFloat(entry.nivelAnsiedad), 0);
+    const averageAnxietyLevel = totalAnxietyLevel / historial.length;
+
+    return Math.round(averageAnxietyLevel * 10) / 10;
+}
 
 module.exports = {
     getUsuario,
@@ -495,15 +631,22 @@ module.exports = {
     getNombreUsuario,
     getSentimientoUsuario,
     getNumRecuerdos,
+    getNumInteracciones,
+    getObjetivoUsuario,
     getSesionRespiracion,
     getMusicaSesionRespiracion,
     getSesionMeditacion,
     actualizarNumSesRespiracion,
     actualizarNumSesMeditacion,
     actualizarNumRecuerdos,
+    actualizarNumInteracciones,
     guardarRecuerdo,
     recuperarListaRecuerdos,
     recuperarRecuerdoPorSentimiento,
-    eliminarRecuerdo
+    eliminarRecuerdo,
+    addHistorial,
+    getHistorial,
+    calcularSentimientoMasFrecuente,
+    calcularMediaNivelAnsiedad
 
 };

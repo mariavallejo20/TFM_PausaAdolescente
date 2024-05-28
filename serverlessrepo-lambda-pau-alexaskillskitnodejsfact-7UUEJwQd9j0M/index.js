@@ -51,7 +51,20 @@ const LaunchRequestHandler = {
             else if (GENEROADOLESCENTE === 'femenino')
                 sentimientosGenero = 'Feliz, Triste, Estresada, Motivada o Agotada.';
                 
-            speakOutput = `¡Hola de nuevo, ${NOMBREADOLESCENTE}! <break time="1s"/>¿Cómo te sientes hoy?: ${sentimientosGenero}`;
+            speakOutput = `¡Hola de nuevo, ${NOMBREADOLESCENTE}! <break time="1s"/>`;
+
+            const numInteracciones = await bbdd.getNumInteracciones(USERID);
+
+            if (numInteracciones % 10 == 0) {
+                // Obtenemos el objetivo del usuario
+                const objetivoUsuario = await bbdd.getObjetivoUsuario(USERID);
+
+                speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
+                speakOutput += `Quiero recordarte que tu objetivo al utilizar esta skill es: " ${objetivoUsuario}".<break time="1s"/> Espero que estés avanzando hacia esa meta y sintiéndote mejor cada día. <break time="1s"/>`;
+                speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_neutral_response_01"/>`;
+            }
+
+            speakOutput += `¿Cómo te sientes hoy?: ${sentimientosGenero}`;
         }
 
         return handlerInput.responseBuilder
@@ -204,8 +217,13 @@ const obtenerSentimientoDiaHandler = {
         if (sentimientoDia) {
             const speakOutput = `¡De acuerdo, añadiré ${sentimientoDia} a las estadísticas de la semana! <break time="1s"/> En una escala del 1 al 10, ¿Cuánta ansiedad o estrés experimentas en este momento? `;
             
-            // Añadimos el sentimiendo del día del usuario en fucnión del idUsuario
+            // Añadimos el sentimiendo del día del usuario en función del idUsuario
             await bbdd.addSentimientoDiaUsuario(USERID, sentimientoDia);
+
+            // Guardar sentimientoDia en los atributos de sesión
+            const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+            sessionAttributes.sentimientoDia = sentimientoDia;
+            handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
             
             return handlerInput.responseBuilder
                 .speak(speakOutput)
@@ -231,10 +249,39 @@ const nivelAnsiedadDiaHandler = {
         const nivelAnsiedad = handlerInput.requestEnvelope.request.intent.slots.nivelAnsiedad.value;
         
         if (nivelAnsiedad) {
-            const speakOutput = `${nivelAnsiedad}, entendido. Vamos a trabajar en ello juntos. <break time="1s"/> ¿Qué necesitas?: respiración, meditación o diario de recuerdos`;
+            let speakOutput = `${nivelAnsiedad}, entendido. Vamos a trabajar en ello juntos. <break time="1s"/> `;
             
-            // Añadimos el nivel de ansiedad del usuario en fucnión del idUsuario
+            // Añadimos el nivel de ansiedad del usuario en función del idUsuario
             await bbdd.addnivelAnsiedadUsuario(USERID, nivelAnsiedad);
+
+            // Recuperamos el sentimiento del día y guardamos ambos en la tabla Historial
+            const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+            const sentimientoDia = sessionAttributes.sentimientoDia;
+
+            // Guardamos el historial y añadimos una interacción al usuario
+            await bbdd.addHistorial(USERID, nivelAnsiedad, sentimientoDia);
+            await bbdd.actualizarNumInteracciones(USERID);
+
+            //Contamos el número de interacciones para saber si mostrar el historial
+            const numInteracciones = await bbdd.getNumInteracciones(USERID);
+
+            if (numInteracciones % 7 == 0) {
+                // Obtenemos el historial del usuario
+                const historial = await bbdd.getHistorial(USERID);
+
+                // Calculamos el sentimiento más frecuente y la media de ansiedad
+                const sentimientoFrecuente = bbdd.calcularSentimientoMasFrecuente(historial);
+                const ansiedadMedia = bbdd.calcularMediaNivelAnsiedad(historial);
+
+                speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
+                speakOutput += `Aquí tienes un resumen de cómo te has sentido en tus últimas 7 interacciones conmigo: <break time="1s"/>
+                                Te has sentido ${sentimientoFrecuente} con mayor frecuencia. <break time="1s"/>
+                                Tu nivel medio de ansiedad ha sido de ${ansiedadMedia}, en una escala del 1 al 10. <break time="1s"/>
+                                Recuerda, que es completamente normal tener altibajos, y que estoy aquí para ayudarte a reducir tu ansiedad y estrés siempre que lo necesites. <break time="1s"/>`;
+                speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_neutral_response_01"/>`;
+            }
+
+            speakOutput += '¿Qué necesitas?: respiración, meditación o diario de recuerdos.';
             
             return handlerInput.responseBuilder
                 .speak(speakOutput)
