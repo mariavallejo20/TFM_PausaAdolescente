@@ -618,6 +618,39 @@ function calcularMediaNivelAnsiedad(historial) {
     return Math.round(averageAnxietyLevel * 10) / 10;
 }
 
+//*****************************************************************************************************************/
+//                              FUNCIONES PARA JUEGOS TERAPÉUTICOS
+//*****************************************************************************************************************/
+
+//Función para obtener un juego
+async function getJuego() {
+    const idJuego = Math.random() < 0.5 ? '1' : '2';
+    
+    const params = {
+        TableName: 'Juego',
+        Key: {
+            idJuego: idJuego
+        }
+    };
+
+    try {
+        const data = await dynamoDB.get(params).promise();
+        const inicioJuego = data.Item.inicioJuego;
+        const palabras = data.Item.palabras;
+        
+        // Seleccionar 4 palabras aleatorias
+        const palabrasAleatorias = palabras.sort(() => 0.5 - Math.random()).slice(0, 4);
+
+        return {
+            inicioJuego: inicioJuego,
+            palabras: palabrasAleatorias
+        };
+    } catch (error) {
+        console.error('Error al acceder a DynamoDB', error);
+        throw new Error('Error al obtener el juego');
+    }
+}
+
 module.exports = {
     getUsuario,
     crearUsuario,
@@ -647,6 +680,7 @@ module.exports = {
     addHistorial,
     getHistorial,
     calcularSentimientoMasFrecuente,
-    calcularMediaNivelAnsiedad
+    calcularMediaNivelAnsiedad,
+    getJuego
 
 };

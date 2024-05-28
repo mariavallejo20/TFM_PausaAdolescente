@@ -639,6 +639,54 @@ const eliminarRecuerdoHandler = {
 };
 
 //*****************************************************************************************************************/
+//                              MANEJADORES PARA TERAPIA CON JUEGOS
+//*****************************************************************************************************************/
+
+
+// Manejador para dar la bienvenida a la terapia con juegos
+const bienvenidaTerapiaJuegosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaTerapiaJuegos';
+    },
+    async handle(handlerInput) {
+
+        let speakOutput = '¡Vamos a por una sesión de juegos terapéuticos, diseñada para ayudarte a reducir la ansiedad y el estrés! Juntos trabajaremos para encontrar calma y bienestar en medio del juego. ';
+
+        //! NO FUNCIONA EXTRAER EL JUEGO
+        //const juego = await bbdd.getJuego();
+
+        // speakOutput += `El inicio del juego es: ${juego.inicioJuego} y las palabras: ${juego.palabras}`;
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+// Manejador para el desarrollo de los juegos
+const terapiaJuegosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'terapiaJuegos';
+    },
+    async handle(handlerInput) {
+
+        const palabra = handlerInput.requestEnvelope.request.intent.slots.palabra.value;
+
+        let speakOutput = `Palabra correcta: ${palabra}`;
+
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt()
+        .getResponse();
+
+    }
+};
+
+//*****************************************************************************************************************/
 //                                              MANEJADORES BASE
 //*****************************************************************************************************************/
 
@@ -787,6 +835,8 @@ exports.handler = Alexa.SkillBuilders.custom()
         capturarSentimientoRecuerdosHandler,
         recuperarRecuerdosHandler,
         eliminarRecuerdoHandler,
+        bienvenidaTerapiaJuegosHandler,
+        terapiaJuegosHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
