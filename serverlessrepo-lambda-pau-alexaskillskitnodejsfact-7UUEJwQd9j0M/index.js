@@ -653,15 +653,22 @@ const bienvenidaTerapiaJuegosHandler = {
 
         let speakOutput = '¡Vamos a por una sesión de juegos terapéuticos, diseñada para ayudarte a reducir la ansiedad y el estrés! Juntos trabajaremos para encontrar calma y bienestar en medio del juego. ';
 
-        //! NO FUNCIONA EXTRAER EL JUEGO
-        //const juego = await bbdd.getJuego();
+        const juego = await bbdd.getJuego();
+        const palabrasJuego = bbdd.seleccionarPalabrasJuego(juego.palabras, 4);
+        const palabra1 = palabrasJuego[0];
 
-        // speakOutput += `El inicio del juego es: ${juego.inicioJuego} y las palabras: ${juego.palabras}`;
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+        sessionAttributes.ronda = 1;
+        sessionAttributes.palabrasJuego = palabrasJuego;
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
+        speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
+        speakOutput += ` <break time="1s"/> ${juego.inicioJuego} <break time="1s"/> Para responder debes decir: "Mi respuesta es", seguido de tu respuesta.  <break time="1s"/>  Empecemos. La primera palabra es: "${palabra1}". `;
 
         return handlerInput.responseBuilder
-        .speak(speakOutput)
-        .reprompt()
-        .getResponse();
+            .speak(speakOutput)
+            .reprompt('¿Cuál es tu palabra?')
+            .getResponse();
 
     }
 };
@@ -676,11 +683,32 @@ const terapiaJuegosHandler = {
 
         const palabra = handlerInput.requestEnvelope.request.intent.slots.palabra.value;
 
-        let speakOutput = `Palabra correcta: ${palabra}`;
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+        const ronda = sessionAttributes.ronda;
+        const palabrasJuego = sessionAttributes.palabrasJuego;
 
-        return handlerInput.responseBuilder
+        let speakOutput = '';
+
+        if (ronda < 4) {
+            const siguientePalabra = palabrasJuego[sessionAttributes.ronda];
+            sessionAttributes.ronda += 1;
+            if (sessionAttributes.ronda == 2)
+                speakOutput += `${palabra}, bien hecho. <break time="1s"/> ¡Vamos con la ronda número ${sessionAttributes.ronda}! <break time="1s"/> La siguiente palabra es ${siguientePalabra}. ¿Cuál es tu respuesta?`;
+            else if(sessionAttributes.ronda == 3)
+                speakOutput += `${palabra}, excelente. <break time="1s"/> ¡Vamos con la ronda número ${sessionAttributes.ronda}! <break time="1s"/> La siguiente palabra es ${siguientePalabra}. ¿Cuál es tu respuesta?`;
+            else
+            speakOutput += `${palabra}, perfecto. <break time="1s"/> ¡Vamos con la ronda número ${sessionAttributes.ronda}! <break time="1s"/> La siguiente palabra es ${siguientePalabra}. ¿Cuál es tu respuesta?`;
+
+        } else {
+            speakOutput += '¡Excelente! Has completado las cuatro rondas';
+            speakOutput += `<audio src="soundbank://soundlibrary/gameshow/gameshow_01"/>`;
+            speakOutput += '¿Qué necesitas ahora?: respiración, meditación, diario de recuerdos o terapia con juegos.'
+        }
+
+
+    return handlerInput.responseBuilder
         .speak(speakOutput)
-        .reprompt()
+        .reprompt(speakOutput)
         .getResponse();
 
     }

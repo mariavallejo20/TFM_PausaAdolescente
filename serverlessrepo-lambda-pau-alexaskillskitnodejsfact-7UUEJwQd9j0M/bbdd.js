@@ -624,31 +624,40 @@ function calcularMediaNivelAnsiedad(historial) {
 
 //Función para obtener un juego
 async function getJuego() {
-    const idJuego = Math.random() < 0.5 ? '1' : '2';
-    
-    const params = {
-        TableName: 'Juego',
-        Key: {
-            idJuego: idJuego
-        }
-    };
+
+    const idJuego = Math.floor(Math.random() * 2) + 1;
 
     try {
-        const data = await dynamoDB.get(params).promise();
-        const inicioJuego = data.Item.inicioJuego;
-        const palabras = data.Item.palabras;
-        
-        // Seleccionar 4 palabras aleatorias
-        const palabrasAleatorias = palabras.sort(() => 0.5 - Math.random()).slice(0, 4);
-
-        return {
-            inicioJuego: inicioJuego,
-            palabras: palabrasAleatorias
+        const params = {
+            TableName: 'Juego',
+            Key: {
+                'idJuego': idJuego
+            }
         };
+        const result = await dynamoDB.get(params).promise();
+
+        const { inicioJuego, palabras } = result.Item;
+
+        return { inicioJuego, palabras };
+
     } catch (error) {
-        console.error('Error al acceder a DynamoDB', error);
-        throw new Error('Error al obtener el juego');
+        console.error('Error al obtener el juego de DynamoDB:', error);
+        throw error;
     }
+}
+
+// Función para seleccionar 4 palabras para jugar a un juego
+function seleccionarPalabrasJuego(palabras, cantidad) {
+    const palabrasAleatorias = [];
+    const palabrasDisponibles = [...palabras]; // Copia para no modificar el array original
+
+    for (let i = 0; i < cantidad; i++) {
+        const indiceAleatorio = Math.floor(Math.random() * palabrasDisponibles.length);
+        palabrasAleatorias.push(palabrasDisponibles[indiceAleatorio]);
+        palabrasDisponibles.splice(indiceAleatorio, 1); // Elimina la palabra seleccionada
+    }
+
+    return palabrasAleatorias;
 }
 
 module.exports = {
@@ -681,6 +690,7 @@ module.exports = {
     getHistorial,
     calcularSentimientoMasFrecuente,
     calcularMediaNivelAnsiedad,
-    getJuego
+    getJuego,
+    seleccionarPalabrasJuego
 
 };
