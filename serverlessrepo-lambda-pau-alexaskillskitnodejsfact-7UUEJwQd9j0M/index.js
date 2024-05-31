@@ -281,11 +281,11 @@ const nivelAnsiedadDiaHandler = {
                 speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_neutral_response_01"/>`;
             }
 
-            speakOutput += '¿Qué necesitas?: respiración, meditación o diario de recuerdos.';
+            speakOutput += '¿Qué necesitas?: respiración, meditación, diario de recuerdos o terapia con juegos.';
             
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Dime qué necesitas: respiración, meditación o diario de recuerdos.')
+                .reprompt('Dime qué necesitas: respiración, meditación, diario de recuerdos o terapia con juegos.')
                 .getResponse();
         } else {
             const speakOutput = 'Lo siento, no he entendido tu nivel de ansiedad. Dime un número del 1 al 10.';
@@ -571,7 +571,7 @@ const capturarSentimientoRecuerdosHandler = {
 
         let speakOutput = `¡Recuerdo guardado con éxito! Podrás eliminarlo en cualquier momento diciendo: 'Eliminar recuerdo', seguido del título del recuerdo. Para escuchar un recuerdo, simplemente di 'Escuchar un recuerdo'. `;
 
-        speakOutput += '¿Qué necesitas ahora?: respiración, meditación o escuchar un recuerdo';
+        speakOutput += '¿Qué necesitas ahora?: respiración, meditación, terapia con juegos o escuchar un recuerdo';
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -601,7 +601,7 @@ const recuperarRecuerdosHandler = {
             speakOutput += `Aún no tienes ningún recuerdo relacionado con tu sentimiento actual ${sentimientoActual}. Para crear tu primer recuerdo debes decir "guardar un recuerdo". `;
 
 
-        speakOutput += '¿Qué necesitas ahora?: respiración, meditación, guardar o escuchar un recuerdo.';
+        speakOutput += '¿Qué necesitas ahora?: respiración, meditación, terapia con juegos, guardar o escuchar un recuerdo.';
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -626,7 +626,7 @@ const eliminarRecuerdoHandler = {
         let speakOutput = '';
 
         if(eliminado)
-            speakOutput = `Se ha eliminado con éxito el recuerdo: ${recuerdoSeleccionado}. ¿Qué necesitas ahora?: respiración, meditación, guardar o escuchar un recuerdo.`;
+            speakOutput = `Se ha eliminado con éxito el recuerdo: ${recuerdoSeleccionado}. ¿Qué necesitas ahora?: respiración, meditación, terapia con juegos, guardar o escuchar un recuerdo.`;
         else
             speakOutput = `Lo siento, no he podido eliminar el recuerdo ${recuerdoSeleccionado}. Inténtalo de nuevo.`;
 
