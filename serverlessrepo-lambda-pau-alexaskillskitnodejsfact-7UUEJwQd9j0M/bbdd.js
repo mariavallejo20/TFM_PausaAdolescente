@@ -13,7 +13,8 @@ async function crearUsuario(idUsuario) {
             numSesRespiracion: 0,
             numSesMeditacion: 0,
             numRecuerdos: 0,
-            numInteracciones: 0
+            numInteracciones: 0,
+            numJuegos: 0
         }
     };
 
@@ -267,6 +268,24 @@ async function getObjetivoUsuario(idUsuario) {
     }
 }
 
+// Función para obtener el número de juegos jugados de un usuario
+async function getNumJuegos(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            ProjectionExpression: 'numJuegos'
+        };
+        const data = await dynamoDB.get(params).promise();
+        return data.Item ? data.Item.numJuegos : 0;
+    } catch (error) {
+        console.error('Error al obtener numJuegos de DynamoDB:', error);
+        throw error;
+    }
+}
+
 //*****************************************************************************************************************/
 //                              FUNCIONES PARA OBTENER SESIÓN DE RESPIRACIÓN
 //*****************************************************************************************************************/
@@ -420,6 +439,28 @@ async function actualizarNumInteracciones(idUsuario) {
         const data = await dynamoDB.update(params).promise();
     } catch (error) {
         console.error('Error al actualizar numInteracciones en DynamoDB:', error);
+        throw error;
+    }
+}
+
+// Función para actualizar y devolver el numero de juegos completados por el usuario
+async function actualizarNumJuegos(idUsuario) {
+    try {
+        const params = {
+            TableName: 'Usuario',
+            Key: {
+                'idUsuario': idUsuario
+            },
+            UpdateExpression: 'SET numJuegos = numJuegos + :inc',
+            ExpressionAttributeValues: {
+                ':inc': 1
+            },
+            ReturnValues: 'ALL_NEW' // Para obtener el nuevo valor actualizado
+        };
+        const data = await dynamoDB.update(params).promise();
+        return data.Attributes.numJuegos; // Retorna el nuevo valor de NumJuegos
+    } catch (error) {
+        console.error('Error al actualizar numJuegos en DynamoDB:', error);
         throw error;
     }
 }
@@ -660,6 +701,35 @@ function seleccionarPalabrasJuego(palabras, cantidad) {
     return palabrasAleatorias;
 }
 
+// Obtener la recompensa de un juego
+async function getRecompensaJuego(puntuacion) {
+    const params = {
+        TableName: 'Recompensa',
+        FilterExpression: 'puntuacion = :puntuacion',
+        ExpressionAttributeValues: {
+            ':puntuacion': puntuacion
+        }
+    };
+
+    try {
+        const data = await dynamoDB.scan(params).promise();
+        if (data.Items.length > 0) {
+            return data.Items[0].recompensa;
+        } else {
+            // No se encontró la puntuación, devolver una recompensa aleatoria
+            const randomParams = {
+                TableName: 'Recompensa'
+            };
+            const allData = await dynamoDB.scan(randomParams).promise();
+            const randomIndex = Math.floor(Math.random() * allData.Items.length);
+            return allData.Items[randomIndex].recompensa;
+        }
+    } catch (error) {
+        console.error("Error retrieving reward:", error);
+        throw new Error('Error retrieving reward');
+    }
+}
+
 module.exports = {
     getUsuario,
     crearUsuario,
@@ -675,6 +745,7 @@ module.exports = {
     getNumRecuerdos,
     getNumInteracciones,
     getObjetivoUsuario,
+    getNumJuegos,
     getSesionRespiracion,
     getMusicaSesionRespiracion,
     getSesionMeditacion,
@@ -682,6 +753,7 @@ module.exports = {
     actualizarNumSesMeditacion,
     actualizarNumRecuerdos,
     actualizarNumInteracciones,
+    actualizarNumJuegos,
     guardarRecuerdo,
     recuperarListaRecuerdos,
     recuperarRecuerdoPorSentimiento,
@@ -691,6 +763,7 @@ module.exports = {
     calcularSentimientoMasFrecuente,
     calcularMediaNivelAnsiedad,
     getJuego,
-    seleccionarPalabrasJuego
+    seleccionarPalabrasJuego,
+    getRecompensaJuego
 
 };

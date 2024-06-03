@@ -651,7 +651,13 @@ const bienvenidaTerapiaJuegosHandler = {
     },
     async handle(handlerInput) {
 
-        let speakOutput = '¡Vamos a por una sesión de juegos terapéuticos, diseñada para ayudarte a reducir la ansiedad y el estrés! Juntos trabajaremos para encontrar calma y bienestar en medio del juego. ';
+        const numJuegos = await bbdd.getNumJuegos(USERID);
+        let speakOutput = '';
+
+        if (numJuegos == 0)
+            speakOutput += '¡Prepárate para una sesión de juegos terapéuticos, diseñada especialmente para ayudarte a reducir la ansiedad y el estrés! A través del juego, buscaremos juntos la calma y el bienestar. Cada vez que completes un juego, ganarás 1 punto, y por cada 5 puntos recibirás un valioso consejo como recompensa. ¡Vamos a empezar y disfrutar del camino hacia la tranquilidad! ';
+        else
+            speakOutput += '¡Vamos a por una sesión de juegos terapéuticos! Recuerda que cada 5 puntos obtendrás un consejo como recompensa. ';
 
         const juego = await bbdd.getJuego();
         const palabrasJuego = bbdd.seleccionarPalabrasJuego(juego.palabras, 4);
@@ -684,7 +690,7 @@ const terapiaJuegosHandler = {
         const palabra = handlerInput.requestEnvelope.request.intent.slots.palabra.value;
 
         const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-        const ronda = sessionAttributes.ronda;
+        const ronda = 4;
         const palabrasJuego = sessionAttributes.palabrasJuego;
 
         let speakOutput = '';
@@ -700,8 +706,19 @@ const terapiaJuegosHandler = {
             speakOutput += `${palabra}, perfecto. <break time="1s"/> ¡Vamos con la ronda número ${sessionAttributes.ronda}! <break time="1s"/> La siguiente palabra es ${siguientePalabra}. ¿Cuál es tu respuesta?`;
 
         } else {
-            speakOutput += '¡Excelente! Has completado las cuatro rondas';
+            speakOutput += '¡Excelente! Has completado las cuatro rondas y has ganado 1 punto. ¡Sigue así!';
             speakOutput += `<audio src="soundbank://soundlibrary/gameshow/gameshow_01"/>`;
+
+            const numJuegos = await bbdd.actualizarNumJuegos(USERID);
+
+            // Cada 5 juegos se obtiene una recompensa
+            if(numJuegos % 5 == 0)
+            {
+                const recompensa = await bbdd.getRecompensaJuego(numJuegos);
+                speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_positive_response_03"/>`;
+                speakOutput += `${recompensa} <break time="2s"/>`;
+            }
+
             speakOutput += '¿Qué necesitas ahora?: respiración, meditación, diario de recuerdos o terapia con juegos.'
         }
 
