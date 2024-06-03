@@ -690,7 +690,7 @@ const terapiaJuegosHandler = {
         const palabra = handlerInput.requestEnvelope.request.intent.slots.palabra.value;
 
         const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-        const ronda = 4;
+        const ronda = sessionAttributes.ronda;
         const palabrasJuego = sessionAttributes.palabrasJuego;
 
         let speakOutput = '';
