@@ -14,7 +14,49 @@ let NOMBREADOLESCENTE = '';
 const functions = require('./functions');
 const bbdd = require('./bbdd');
 
-
+// ******************* APL DOCUMENT INTERFAZ *******************
+const APLDocument = {
+    "type": "APL",
+    "version": "1.4",
+    "theme": "dark",
+    "import": [
+      {
+        "name": "alexa-layouts",
+        "version": "1.1.0"
+      }
+    ],
+    "mainTemplate": {
+      "items": [
+        {
+          "type": "Container",
+          "width": "100vw",
+          "height": "100vh",
+          "items": [
+            {
+              "type": "Image",
+              "source": "https://img.freepik.com/vector-gratis/diseno-fondo-acuarela_23-2148825780.jpg?t=st=1717437347~exp=1717440947~hmac=c859c16bfd73f53cad40cc463297ecd2c7b1c131d4ff5f6c934ebba8a2b1d06c&w=1380",
+              "scale": "best-fill",
+              "width": "100vw",
+              "height": "100vh",
+              "position": "absolute"
+            },
+            {
+              "type": "Text",
+              "text": "<b>PAUSA</b>\n<b>ADOLESCENTE</b>",
+              "fontSize": "70dp",
+              "color": "#9FC3B9",
+              "textAlign": "center",
+              "textAlignVertical": "center",
+              "width": "100vw",
+              "height": "100vh",
+              "position": "absolute"
+            }
+          ]
+        }
+      ]
+    }
+}
+  
 //*****************************************************************************************************************/
 //                              MANEJADORES INICIALES (CUESTIONARIO INICIAL)
 //*****************************************************************************************************************/
@@ -65,6 +107,14 @@ const LaunchRequestHandler = {
             }
 
             speakOutput += `¿Cómo te sientes hoy?: ${sentimientosGenero}`;
+        }
+
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'welcomeToken',
+                document: APLDocument
+            });
         }
 
         return handlerInput.responseBuilder
