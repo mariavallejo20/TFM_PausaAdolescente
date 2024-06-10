@@ -15,7 +15,7 @@ const functions = require('./functions');
 const bbdd = require('./bbdd');
 
 // ******************* APL DOCUMENT INTERFAZ *******************
-const APLDocument = {
+const APLDocument_Inicio = {
     "type": "APL",
     "version": "1.4",
     "theme": "dark",
@@ -55,7 +55,54 @@ const APLDocument = {
         }
       ]
     }
-}
+};
+
+const APLDocument_Funcionalidades = {
+    "type": "APL",
+    "version": "1.4",
+    "theme": "dark",
+    "import": [
+      {
+        "name": "alexa-layouts",
+        "version": "1.1.0"
+      }
+    ],
+    "mainTemplate": {
+      "items": [
+        {
+          "type": "Container",
+          "width": "100vw",
+          "height": "100vh",
+          "items": [
+            {
+              "type": "Frame",
+              "backgroundColor": "#9FC3B9",
+              "width": "100vw",
+              "height": "100vh",
+              "position": "absolute"
+            },
+            {
+              "type": "Text",
+              "text": "${textData.textVariable}",
+              "fontSize": "70dp",
+              "color": "white",
+              "textAlign": "center",
+              "textAlignVertical": "center",
+              "width": "100vw",
+              "height": "100vh",
+              "position": "absolute",
+              "paddingLeft": "10dp",
+              "paddingRight": "10dp",
+              "paddingTop": "10dp",
+              "paddingBottom": "10dp"
+            }
+          ]
+        }
+      ]
+    }
+};
+
+  
   
 //*****************************************************************************************************************/
 //                              MANEJADORES INICIALES (CUESTIONARIO INICIAL)
@@ -113,7 +160,7 @@ const LaunchRequestHandler = {
             handlerInput.responseBuilder.addDirective({
                 type: 'Alexa.Presentation.APL.RenderDocument',
                 token: 'welcomeToken',
-                document: APLDocument
+                document: APLDocument_Inicio
             });
         }
 
@@ -378,11 +425,27 @@ const bienvenidaSesionRespiracionHandler = {
         
         speakOutput += 'Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"';
         
+        //! No funciona 
+        // if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+        //     handlerInput.responseBuilder.addDirective({
+        //         type: 'Alexa.Presentation.APL.RenderDocument',
+        //         token: 'welcomeToken',
+        //         document: APLDocument_Funcionalidades,
+        //         datasources: {
+        //             "textData": {
+        //                 "type": "object",
+        //                 "properties": {
+        //                     "textVariable": "Sesión de Respiración"
+        //                 }
+        //             }
+        //         }
+        //     });
+        // }
+
         return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Dime qué necesitas: : "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"')
+                .reprompt('Dime qué necesitas: "sesión de respiración corta", "sesión de respiración media" o "sesión de respiración larga"')
                 .getResponse();
-
     }
 };
 
