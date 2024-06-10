@@ -51,7 +51,20 @@ const LaunchRequestHandler = {
             else if (GENEROADOLESCENTE === 'femenino')
                 sentimientosGenero = 'Feliz, Triste, Estresada, Motivada o Agotada.';
                 
-            speakOutput = `¡Hola de nuevo, ${NOMBREADOLESCENTE}! <break time="1s"/>¿Cómo te sientes hoy?: ${sentimientosGenero}`;
+            speakOutput = `¡Hola de nuevo, ${NOMBREADOLESCENTE}! <break time="1s"/>`;
+
+            const numInteracciones = await bbdd.getNumInteracciones(USERID);
+
+            if (numInteracciones % 10 == 0) {
+                // Obtenemos el objetivo del usuario
+                const objetivoUsuario = await bbdd.getObjetivoUsuario(USERID);
+
+                speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
+                speakOutput += `Quiero recordarte que tu objetivo al utilizar esta skill es: " ${objetivoUsuario}".<break time="1s"/> Espero que estés avanzando hacia esa meta y sintiéndote mejor cada día. <break time="1s"/>`;
+                speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_neutral_response_01"/>`;
+            }
+
+            speakOutput += `¿Cómo te sientes hoy?: ${sentimientosGenero}`;
         }
 
         return handlerInput.responseBuilder
@@ -256,14 +269,43 @@ const nivelAnsiedadDiaHandler = {
         const nivelAnsiedad = handlerInput.requestEnvelope.request.intent.slots.nivelAnsiedad.value;
         
         if (nivelAnsiedad) {
-            const speakOutput = `${nivelAnsiedad}, entendido. Vamos a trabajar en ello juntos. <break time="1s"/> ¿Qué necesitas?: respiración, meditación o diario de recuerdos`;
+            let speakOutput = `${nivelAnsiedad}, entendido. Vamos a trabajar en ello juntos. <break time="1s"/> `;
             
-            // Añadimos el nivel de ansiedad del usuario en fucnión del idUsuario
+            // Añadimos el nivel de ansiedad del usuario en función del idUsuario
             await bbdd.addnivelAnsiedadUsuario(USERID, nivelAnsiedad);
+
+            // Recuperamos el sentimiento del día y guardamos ambos en la tabla Historial
+            const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+            const sentimientoDia = sessionAttributes.sentimientoDia;
+
+            // Guardamos el historial y añadimos una interacción al usuario
+            await bbdd.addHistorial(USERID, nivelAnsiedad, sentimientoDia);
+            await bbdd.actualizarNumInteracciones(USERID);
+
+            //Contamos el número de interacciones para saber si mostrar el historial
+            const numInteracciones = await bbdd.getNumInteracciones(USERID);
+
+            if (numInteracciones % 7 == 0) {
+                // Obtenemos el historial del usuario
+                const historial = await bbdd.getHistorial(USERID);
+
+                // Calculamos el sentimiento más frecuente y la media de ansiedad
+                const sentimientoFrecuente = bbdd.calcularSentimientoMasFrecuente(historial);
+                const ansiedadMedia = bbdd.calcularMediaNivelAnsiedad(historial);
+
+                speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
+                speakOutput += `Aquí tienes un resumen de cómo te has sentido en tus últimas 7 interacciones conmigo: <break time="1s"/>
+                                Te has sentido ${sentimientoFrecuente} con mayor frecuencia. <break time="1s"/>
+                                Tu nivel medio de ansiedad ha sido de ${ansiedadMedia}, en una escala del 1 al 10. <break time="1s"/>
+                                Recuerda, que es completamente normal tener altibajos, y que estoy aquí para ayudarte a reducir tu ansiedad y estrés siempre que lo necesites. <break time="1s"/>`;
+                speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_neutral_response_01"/>`;
+            }
+
+            speakOutput += '¿Qué necesitas?: respiración, meditación, diario de recuerdos o terapia con juegos.';
             
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Dime qué necesitas: respiración, meditación o diario de recuerdos.')
+                .reprompt('Dime qué necesitas: respiración, meditación, diario de recuerdos o terapia con juegos.')
                 .getResponse();
         } else {
             const speakOutput = 'Lo siento, no he entendido tu nivel de ansiedad. Dime un número del 1 al 10.';
@@ -549,7 +591,7 @@ const capturarSentimientoRecuerdosHandler = {
 
         let speakOutput = `¡Recuerdo guardado con éxito! Podrás eliminarlo en cualquier momento diciendo: 'Eliminar recuerdo', seguido del título del recuerdo. Para escuchar un recuerdo, simplemente di 'Escuchar un recuerdo'. `;
 
-        speakOutput += '¿Qué necesitas ahora?: respiración, meditación o escuchar un recuerdo';
+        speakOutput += '¿Qué necesitas ahora?: respiración, meditación, terapia con juegos o escuchar un recuerdo';
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -579,7 +621,7 @@ const recuperarRecuerdosHandler = {
             speakOutput += `Aún no tienes ningún recuerdo relacionado con tu sentimiento actual ${sentimientoActual}. Para crear tu primer recuerdo debes decir "guardar un recuerdo". `;
 
 
-        speakOutput += '¿Qué necesitas ahora?: respiración, meditación, guardar o escuchar un recuerdo.';
+        speakOutput += '¿Qué necesitas ahora?: respiración, meditación, terapia con juegos, guardar o escuchar un recuerdo.';
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -604,13 +646,106 @@ const eliminarRecuerdoHandler = {
         let speakOutput = '';
 
         if(eliminado)
-            speakOutput = `Se ha eliminado con éxito el recuerdo: ${recuerdoSeleccionado}. ¿Qué necesitas ahora?: respiración, meditación, guardar o escuchar un recuerdo.`;
+            speakOutput = `Se ha eliminado con éxito el recuerdo: ${recuerdoSeleccionado}. ¿Qué necesitas ahora?: respiración, meditación, terapia con juegos, guardar o escuchar un recuerdo.`;
         else
             speakOutput = `Lo siento, no he podido eliminar el recuerdo ${recuerdoSeleccionado}. Inténtalo de nuevo.`;
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
         .reprompt()
+        .getResponse();
+
+    }
+};
+
+//*****************************************************************************************************************/
+//                              MANEJADORES PARA TERAPIA CON JUEGOS
+//*****************************************************************************************************************/
+
+
+// Manejador para dar la bienvenida a la terapia con juegos
+const bienvenidaTerapiaJuegosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bienvenidaTerapiaJuegos';
+    },
+    async handle(handlerInput) {
+
+        const numJuegos = await bbdd.getNumJuegos(USERID);
+        let speakOutput = '';
+
+        if (numJuegos == 0)
+            speakOutput += '¡Prepárate para una sesión de juegos terapéuticos, diseñada especialmente para ayudarte a reducir la ansiedad y el estrés! A través del juego, buscaremos juntos la calma y el bienestar. Cada vez que completes un juego, ganarás 1 punto, y por cada 5 puntos recibirás un valioso consejo como recompensa. ¡Vamos a empezar y disfrutar del camino hacia la tranquilidad! ';
+        else
+            speakOutput += '¡Vamos a por una sesión de juegos terapéuticos! Recuerda que cada 5 puntos obtendrás un consejo como recompensa. ';
+
+        const juego = await bbdd.getJuego();
+        const palabrasJuego = bbdd.seleccionarPalabrasJuego(juego.palabras, 4);
+        const palabra1 = palabrasJuego[0];
+
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+        sessionAttributes.ronda = 1;
+        sessionAttributes.palabrasJuego = palabrasJuego;
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
+        speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
+        speakOutput += ` <break time="1s"/> ${juego.inicioJuego} <break time="1s"/> Para responder debes decir: "Mi respuesta es", seguido de tu respuesta.  <break time="1s"/>  Empecemos. La primera palabra es: "${palabra1}". `;
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt('¿Cuál es tu palabra?')
+            .getResponse();
+
+    }
+};
+
+// Manejador para el desarrollo de los juegos
+const terapiaJuegosHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'terapiaJuegos';
+    },
+    async handle(handlerInput) {
+
+        const palabra = handlerInput.requestEnvelope.request.intent.slots.palabra.value;
+
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+        const ronda = sessionAttributes.ronda;
+        const palabrasJuego = sessionAttributes.palabrasJuego;
+
+        let speakOutput = '';
+
+        if (ronda < 4) {
+            const siguientePalabra = palabrasJuego[sessionAttributes.ronda];
+            sessionAttributes.ronda += 1;
+            if (sessionAttributes.ronda == 2)
+                speakOutput += `${palabra}, bien hecho. <break time="1s"/> ¡Vamos con la ronda número ${sessionAttributes.ronda}! <break time="1s"/> La siguiente palabra es ${siguientePalabra}. ¿Cuál es tu respuesta?`;
+            else if(sessionAttributes.ronda == 3)
+                speakOutput += `${palabra}, excelente. <break time="1s"/> ¡Vamos con la ronda número ${sessionAttributes.ronda}! <break time="1s"/> La siguiente palabra es ${siguientePalabra}. ¿Cuál es tu respuesta?`;
+            else
+            speakOutput += `${palabra}, perfecto. <break time="1s"/> ¡Vamos con la ronda número ${sessionAttributes.ronda}! <break time="1s"/> La siguiente palabra es ${siguientePalabra}. ¿Cuál es tu respuesta?`;
+
+        } else {
+            speakOutput += '¡Excelente! Has completado las cuatro rondas y has ganado 1 punto. ¡Sigue así!';
+            speakOutput += `<audio src="soundbank://soundlibrary/gameshow/gameshow_01"/>`;
+
+            const numJuegos = await bbdd.actualizarNumJuegos(USERID);
+
+            // Cada 5 juegos se obtiene una recompensa
+            if(numJuegos % 5 == 0)
+            {
+                const recompensa = await bbdd.getRecompensaJuego(numJuegos);
+                speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_positive_response_03"/>`;
+                speakOutput += `${recompensa} <break time="2s"/>`;
+            }
+
+            speakOutput += '¿Qué necesitas ahora?: respiración, meditación, diario de recuerdos o terapia con juegos.'
+        }
+
+
+    return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt(speakOutput)
         .getResponse();
 
     }
@@ -765,6 +900,8 @@ exports.handler = Alexa.SkillBuilders.custom()
         capturarSentimientoRecuerdosHandler,
         recuperarRecuerdosHandler,
         eliminarRecuerdoHandler,
+        bienvenidaTerapiaJuegosHandler,
+        terapiaJuegosHandler,
         PauseIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
