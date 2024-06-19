@@ -1,5 +1,6 @@
 
 const Alexa = require('ask-sdk-core');
+const fs = require('fs');
 
 // Constante para alamcenar el género del adolescente
 let GENEROADOLESCENTE = '';
@@ -15,93 +16,12 @@ const functions = require('./functions');
 const bbdd = require('./bbdd');
 
 // ******************* APL DOCUMENT INTERFAZ *******************
-const APLDocument_Inicio = {
-    "type": "APL",
-    "version": "1.4",
-    "theme": "dark",
-    "import": [
-      {
-        "name": "alexa-layouts",
-        "version": "1.1.0"
-      }
-    ],
-    "mainTemplate": {
-      "items": [
-        {
-          "type": "Container",
-          "width": "100vw",
-          "height": "100vh",
-          "items": [
-            {
-              "type": "Image",
-              "source": "https://img.freepik.com/vector-gratis/diseno-fondo-acuarela_23-2148825780.jpg?t=st=1717437347~exp=1717440947~hmac=c859c16bfd73f53cad40cc463297ecd2c7b1c131d4ff5f6c934ebba8a2b1d06c&w=1380",
-              "scale": "best-fill",
-              "width": "100vw",
-              "height": "100vh",
-              "position": "absolute"
-            },
-            {
-              "type": "Text",
-              "text": "<b>PAUSA</b>\n<b>ADOLESCENTE</b>",
-              "fontSize": "70dp",
-              "color": "#9FC3B9",
-              "textAlign": "center",
-              "textAlignVertical": "center",
-              "width": "100vw",
-              "height": "100vh",
-              "position": "absolute"
-            }
-          ]
-        }
-      ]
-    }
-};
 
-const APLDocument_Funcionalidades = {
-    "type": "APL",
-    "version": "1.4",
-    "theme": "dark",
-    "import": [
-      {
-        "name": "alexa-layouts",
-        "version": "1.1.0"
-      }
-    ],
-    "mainTemplate": {
-      "items": [
-        {
-          "type": "Container",
-          "width": "100vw",
-          "height": "100vh",
-          "items": [
-            {
-              "type": "Frame",
-              "backgroundColor": "#9FC3B9",
-              "width": "100vw",
-              "height": "100vh",
-              "position": "absolute"
-            },
-            {
-              "type": "Text",
-              "text": "${textData.textVariable}",
-              "fontSize": "70dp",
-              "color": "white",
-              "textAlign": "center",
-              "textAlignVertical": "center",
-              "width": "100vw",
-              "height": "100vh",
-              "position": "absolute",
-              "paddingLeft": "10dp",
-              "paddingRight": "10dp",
-              "paddingTop": "10dp",
-              "paddingBottom": "10dp"
-            }
-          ]
-        }
-      ]
-    }
-};
-
+const aplInicio = JSON.parse(fs.readFileSync('./APLs/APLInicio.json', 'utf8'));
+const aplRespiracion = JSON.parse(fs.readFileSync('./APLs/APLRespiracion.json', 'utf8'));
+const aplMeditacion = JSON.parse(fs.readFileSync('./APLs/APLMeditacion.json', 'utf8'));
+const aplDiario= JSON.parse(fs.readFileSync('./APLs/APLDiario.json', 'utf8'));
+const aplJuegos = JSON.parse(fs.readFileSync('./APLs/APLJuegos.json', 'utf8'));
   
   
 //*****************************************************************************************************************/
@@ -160,7 +80,7 @@ const LaunchRequestHandler = {
             handlerInput.responseBuilder.addDirective({
                 type: 'Alexa.Presentation.APL.RenderDocument',
                 token: 'welcomeToken',
-                document: APLDocument_Inicio
+                document: aplInicio
             });
         }
 
@@ -443,23 +363,14 @@ const bienvenidaSesionRespiracionHandler = {
         }
         
         speakOutput += 'Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"';
-        
-        //! No funciona 
-        // if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
-        //     handlerInput.responseBuilder.addDirective({
-        //         type: 'Alexa.Presentation.APL.RenderDocument',
-        //         token: 'welcomeToken',
-        //         document: APLDocument_Funcionalidades,
-        //         datasources: {
-        //             "textData": {
-        //                 "type": "object",
-        //                 "properties": {
-        //                     "textVariable": "Sesión de Respiración"
-        //                 }
-        //             }
-        //         }
-        //     });
-        // }
+    
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'respiracionToken',
+                document: aplRespiracion
+            });
+        }
 
         return handlerInput.responseBuilder
                 .speak(speakOutput)
@@ -531,6 +442,14 @@ const bienvenidaSesionMeditacionHandler = {
 
         speakOutput += 'Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"';
 
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'meditacionToken',
+                document: aplMeditacion
+            });
+        }
+
         return handlerInput.responseBuilder
         .speak(speakOutput)
         .reprompt('Dime qué necesitas: : "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"')
@@ -599,6 +518,14 @@ const bienvenidaRecuerdosHandler = {
             speakOutput += 'Recuerda que puedes guardar recuerdos relacionados con tus sentimientos y luego escuchar un recuerdo según cómo te sientas en el momento. ¿Qué te gustaría hacer?: "Guardar un recuerdo" o "Escuchar un recuerdo" ';
         else
             speakOutput += 'Este es un lugar especial donde puedes guardar pequeños momentos que te hagan sentir bien y te ayuden a combatir la ansiedad y el estrés. Puedes guardar recuerdos relacionados con tus sentimientos y luego escuchar un recuerdo según cómo te sientas en el momento. Solo di "Guardar un recuerdo" para añadir algo nuevo, o "Escuchar un recuerdo" para escuchar uno acorde a tu estado emocional actual. ¿Qué te gustaría hacer?';
+
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'diarioToken',
+                document: aplDiario
+            });
+        }
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -762,6 +689,14 @@ const eliminarRecuerdoHandler = {
         else
             speakOutput = `Lo siento, no he podido eliminar el recuerdo ${recuerdoSeleccionado}. Inténtalo de nuevo.`;
 
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'diarioToken',
+                document: aplDiario
+            });
+        }
+
         return handlerInput.responseBuilder
         .speak(speakOutput)
         .reprompt()
@@ -802,6 +737,14 @@ const bienvenidaTerapiaJuegosHandler = {
 
         speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
         speakOutput += ` <break time="1s"/> ${juego.inicioJuego} <break time="1s"/> Para responder debes decir: "Mi respuesta es", seguido de tu respuesta.  <break time="1s"/>  Empecemos. La primera palabra es: "${palabra1}". `;
+
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'juegosToken',
+                document: aplJuegos
+            });
+        }
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -853,7 +796,6 @@ const terapiaJuegosHandler = {
 
             speakOutput += '¿Qué necesitas ahora?: respiración, meditación, diario de recuerdos o terapia con juegos.'
         }
-
 
     return handlerInput.responseBuilder
         .speak(speakOutput)
