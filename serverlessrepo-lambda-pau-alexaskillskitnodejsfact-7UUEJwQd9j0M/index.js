@@ -1,5 +1,6 @@
 
 const Alexa = require('ask-sdk-core');
+const fs = require('fs');
 
 // Constante para alamcenar el género del adolescente
 let GENEROADOLESCENTE = '';
@@ -14,7 +15,15 @@ let NOMBREADOLESCENTE = '';
 const functions = require('./functions');
 const bbdd = require('./bbdd');
 
+// ******************* APL DOCUMENT INTERFAZ *******************
 
+const aplInicio = JSON.parse(fs.readFileSync('./APLs/APLInicio.json', 'utf8'));
+const aplRespiracion = JSON.parse(fs.readFileSync('./APLs/APLRespiracion.json', 'utf8'));
+const aplMeditacion = JSON.parse(fs.readFileSync('./APLs/APLMeditacion.json', 'utf8'));
+const aplDiario= JSON.parse(fs.readFileSync('./APLs/APLDiario.json', 'utf8'));
+const aplJuegos = JSON.parse(fs.readFileSync('./APLs/APLJuegos.json', 'utf8'));
+  
+  
 //*****************************************************************************************************************/
 //                              MANEJADORES INICIALES (CUESTIONARIO INICIAL)
 //*****************************************************************************************************************/
@@ -65,6 +74,14 @@ const LaunchRequestHandler = {
             }
 
             speakOutput += `¿Cómo te sientes hoy?: ${sentimientosGenero}`;
+        }
+
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'welcomeToken',
+                document: aplInicio
+            });
         }
 
         return handlerInput.responseBuilder
@@ -347,12 +364,19 @@ const bienvenidaSesionRespiracionHandler = {
         }
         
         speakOutput += 'Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"';
-        
+    
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'respiracionToken',
+                document: aplRespiracion
+            });
+        }
+
         return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Dime qué necesitas: : "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"')
+                .reprompt('Dime qué necesitas: "sesión de respiración corta", "sesión de respiración media" o "sesión de respiración larga"')
                 .getResponse();
-
     }
 };
 
@@ -418,6 +442,14 @@ const bienvenidaSesionMeditacionHandler = {
         }
 
         speakOutput += 'Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"';
+
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'meditacionToken',
+                document: aplMeditacion
+            });
+        }
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -487,6 +519,14 @@ const bienvenidaRecuerdosHandler = {
             speakOutput += 'Recuerda que puedes guardar recuerdos relacionados con tus sentimientos y luego escuchar un recuerdo según cómo te sientas en el momento. ¿Qué te gustaría hacer?: "Guardar un recuerdo" o "Escuchar un recuerdo" ';
         else
             speakOutput += 'Este es un lugar especial donde puedes guardar pequeños momentos que te hagan sentir bien y te ayuden a combatir la ansiedad y el estrés. Puedes guardar recuerdos relacionados con tus sentimientos y luego escuchar un recuerdo según cómo te sientas en el momento. Solo di "Guardar un recuerdo" para añadir algo nuevo, o "Escuchar un recuerdo" para escuchar uno acorde a tu estado emocional actual. ¿Qué te gustaría hacer?';
+
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'diarioToken',
+                document: aplDiario
+            });
+        }
 
         return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -650,6 +690,14 @@ const eliminarRecuerdoHandler = {
         else
             speakOutput = `Lo siento, no he podido eliminar el recuerdo ${recuerdoSeleccionado}. Inténtalo de nuevo.`;
 
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'diarioToken',
+                document: aplDiario
+            });
+        }
+
         return handlerInput.responseBuilder
         .speak(speakOutput)
         .reprompt()
@@ -690,6 +738,14 @@ const bienvenidaTerapiaJuegosHandler = {
 
         speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_bridge_01"/>`;
         speakOutput += ` <break time="1s"/> ${juego.inicioJuego} <break time="1s"/> Para responder debes decir: "Mi respuesta es", seguido de tu respuesta.  <break time="1s"/>  Empecemos. La primera palabra es: "${palabra1}". `;
+
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+            handlerInput.responseBuilder.addDirective({
+                type: 'Alexa.Presentation.APL.RenderDocument',
+                token: 'juegosToken',
+                document: aplJuegos
+            });
+        }
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -741,7 +797,6 @@ const terapiaJuegosHandler = {
 
             speakOutput += '¿Qué necesitas ahora?: respiración, meditación, diario de recuerdos o terapia con juegos.'
         }
-
 
     return handlerInput.responseBuilder
         .speak(speakOutput)
