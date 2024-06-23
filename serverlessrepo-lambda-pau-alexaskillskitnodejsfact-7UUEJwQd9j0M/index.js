@@ -235,7 +235,7 @@ const obtenerSentimientoDiaHandler = {
 
             let speakOutput = `¡De acuerdo, añadiré ${sentimientoDia} a las estadísticas de la semana! <break time="1s"/>`;
 
-            if (sentimientoDia != 'feliz' || sentimientoDia != 'motivado' || sentimientoDia != 'motivada')
+            if (sentimientoDia != 'feliz' && sentimientoDia != 'motivado' && sentimientoDia != 'motivada')
             {
                 const recuerdo = await bbdd.recuperarRecuerdoPorSentimiento(USERID, sentimientoDia);
                 if (recuerdo != null)
