@@ -28,6 +28,7 @@ const aplJuegos = JSON.parse(fs.readFileSync('./APLs/APLJuegos.json', 'utf8'));
 //                              MANEJADORES INICIALES (CUESTIONARIO INICIAL)
 //*****************************************************************************************************************/
 
+// Manejador de BIENVENIDA de la skill
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
@@ -62,8 +63,10 @@ const LaunchRequestHandler = {
                 
             speakOutput = `¡Hola de nuevo, ${NOMBREADOLESCENTE}! <break time="1s"/>`;
 
+            // Comprobamos el número de interacciones para decidir el diálogo
             const numInteracciones = await bbdd.getNumInteracciones(USERID);
 
+            // Si el número de interacciones es múltiplo de 10 --> recordamos el objetivo del uso de la skill
             if (numInteracciones % 10 == 0) {
                 // Obtenemos el objetivo del usuario
                 const objetivoUsuario = await bbdd.getObjetivoUsuario(USERID);
@@ -76,6 +79,7 @@ const LaunchRequestHandler = {
             speakOutput += `¿Cómo te sientes hoy?: ${sentimientosGenero}`;
         }
 
+        // Añadimos la interfaz de la skill
         if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
             handlerInput.responseBuilder.addDirective({
                 type: 'Alexa.Presentation.APL.RenderDocument',
@@ -180,7 +184,7 @@ const obtenerObjetivoHandler = {
     }
 };
 
-// Manejador para obtener el objetivo del adolescente
+// Manejador para obtener el tiempo de decicación a la skill del adolescente
 const dedicacionDiariaHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -236,6 +240,7 @@ const obtenerSentimientoDiaHandler = {
 
             let speakOutput = `¡De acuerdo, añadiré ${sentimientoDia} a las estadísticas de la semana! <break time="1s"/>`;
 
+            // Si encontramos que el sentimiento del adolescente es negativo --> proporcionamos un recuerdo relacionado con el sentimiento actual
             if (sentimientoDia != 'feliz' && sentimientoDia != 'motivado' && sentimientoDia != 'motivada')
             {
                 const recuerdo = await bbdd.recuperarRecuerdoPorSentimiento(USERID, sentimientoDia);
@@ -350,6 +355,7 @@ const bienvenidaSesionRespiracionHandler = {
 
         let speakOutput = '';
 
+        // Actualizamos y recuperamos el número de sesiones de respiración del usuario
         const numSesUsuario = await bbdd.actualizarNumSesRespiracion(USERID);
 
         if (GENEROADOLESCENTE == 'masculino')
@@ -357,6 +363,7 @@ const bienvenidaSesionRespiracionHandler = {
         else if (GENEROADOLESCENTE == 'femenino')
             speakOutput += `${NOMBREADOLESCENTE}, bienvenida a una sesión de respiración guiada <break time="1s"/> `;
 
+        // Cada 5 sesiones de respiración felicitamos al usuario y le recordamos cuantas sesiones lleva realizadas
         if (numSesUsuario % 5 == 0) {
             speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_positive_response_03"/>`;
             speakOutput += `¡Felicidades, vas a realizar tu sesión de respiración número ${numSesUsuario}! `;
@@ -365,6 +372,7 @@ const bienvenidaSesionRespiracionHandler = {
         
         speakOutput += 'Elige la duración de tu sesión, para ello puedes decir: "sesión de respiración corta", "sesión de respiración media" o, "sesión de respiración larga"';
     
+        // Añadimos la interfaz de usuario de las sesiones de respiración
         if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
             handlerInput.responseBuilder.addDirective({
                 type: 'Alexa.Presentation.APL.RenderDocument',
@@ -426,6 +434,7 @@ const bienvenidaSesionMeditacionHandler = {
     },
     async handle(handlerInput) {
 
+        // Actualizamos y obtenemos el número de sesiones de meditación del adolescente
         const numSesUsuario = await bbdd.actualizarNumSesMeditacion(USERID);
 
         let speakOutput = '';
@@ -435,6 +444,7 @@ const bienvenidaSesionMeditacionHandler = {
         else if (GENEROADOLESCENTE == 'femenino')
             speakOutput += `${NOMBREADOLESCENTE}, bienvenida a tu sesión de meditación para reducir la ansiedad y el estrés. `;
 
+        // Cada 5 sesiones felicitamos el adolescente
         if (numSesUsuario % 5 == 0) {
             speakOutput += `<audio src="soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_positive_response_03"/>`;
             speakOutput += `¡Felicidades, vas a realizar tu sesión de meditación número ${numSesUsuario}! `;
@@ -443,6 +453,7 @@ const bienvenidaSesionMeditacionHandler = {
 
         speakOutput += 'Elige la temática de tu sesión de meditación de hoy, puedes decir: "sesión de meditación de visualización, conexión con el cuerpo, gratitud, o calma"';
 
+        // Añadimos la interfaz para la sesiones de meditación
         if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
             handlerInput.responseBuilder.addDirective({
                 type: 'Alexa.Presentation.APL.RenderDocument',
@@ -506,6 +517,7 @@ const bienvenidaRecuerdosHandler = {
     },
     async handle(handlerInput) {
 
+        // Obtenemos el número de recuerdos
         const numRecuerdos = await bbdd.getNumRecuerdos(USERID);
 
         let speakOutput = '';
@@ -515,11 +527,13 @@ const bienvenidaRecuerdosHandler = {
         else if (GENEROADOLESCENTE == 'femenino')
             speakOutput += `¡${NOMBREADOLESCENTE}, bienvenida a tu diario de recuerdos! `;
 
+        // Adaptamos el diálogo en función del número de recuerdos guardados
         if(numRecuerdos != 0)
             speakOutput += 'Recuerda que puedes guardar recuerdos relacionados con tus sentimientos y luego escuchar un recuerdo según cómo te sientas en el momento. ¿Qué te gustaría hacer?: "Guardar un recuerdo" o "Escuchar un recuerdo" ';
         else
             speakOutput += 'Este es un lugar especial donde puedes guardar pequeños momentos que te hagan sentir bien y te ayuden a combatir la ansiedad y el estrés. Puedes guardar recuerdos relacionados con tus sentimientos y luego escuchar un recuerdo según cómo te sientas en el momento. Solo di "Guardar un recuerdo" para añadir algo nuevo, o "Escuchar un recuerdo" para escuchar uno acorde a tu estado emocional actual. ¿Qué te gustaría hacer?';
 
+        // Añadimos la interfaz de usuario del diario de recuerdos
         if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
             handlerInput.responseBuilder.addDirective({
                 type: 'Alexa.Presentation.APL.RenderDocument',
@@ -625,6 +639,7 @@ const capturarSentimientoRecuerdosHandler = {
 
         const sentimientoRecuerdo = handlerInput.requestEnvelope.request.intent.slots.sentimientoRecuerdo.value;
 
+        // Guardamos y actualizamos el número de recuerdos del adolescente
         await bbdd.guardarRecuerdo(USERID, tituloRecuerdo, descripcionRecuerdo, sentimientoRecuerdo);
 
         await bbdd.actualizarNumRecuerdos(USERID);
@@ -641,7 +656,7 @@ const capturarSentimientoRecuerdosHandler = {
     }
 };
 
-// Manejador para dar recuperar recuerdos
+// Manejador para recuperar recuerdos
 const recuperarRecuerdosHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -649,6 +664,7 @@ const recuperarRecuerdosHandler = {
     },
     async handle(handlerInput) {
 
+        // Obtenemos un recuerdo en función del sentimiento actual
         const sentimientoActual = await bbdd.getSentimientoUsuario(USERID);
 
         const recuerdo = await bbdd.recuperarRecuerdoPorSentimiento(USERID, sentimientoActual);
@@ -722,11 +738,13 @@ const bienvenidaTerapiaJuegosHandler = {
         const numJuegos = await bbdd.getNumJuegos(USERID);
         let speakOutput = '';
 
+        // Adaptamos el diálogo en función del usuario
         if (numJuegos == 0)
             speakOutput += '¡Prepárate para una sesión de juegos terapéuticos, diseñada especialmente para ayudarte a reducir la ansiedad y el estrés! A través del juego, buscaremos juntos la calma y el bienestar. Cada vez que completes un juego, ganarás 1 punto, y por cada 5 puntos recibirás un valioso consejo como recompensa. ¡Vamos a empezar y disfrutar del camino hacia la tranquilidad! ';
         else
             speakOutput += '¡Vamos a por una sesión de juegos terapéuticos! Recuerda que cada 5 puntos obtendrás un consejo como recompensa. ';
 
+        // Obtenemos los elementos del juego
         const juego = await bbdd.getJuego();
         const palabrasJuego = bbdd.seleccionarPalabrasJuego(juego.palabras, 4);
         const palabra1 = palabrasJuego[0];
@@ -771,6 +789,7 @@ const terapiaJuegosHandler = {
 
         let speakOutput = '';
 
+        // Desarrollo de las  diferentes rondas del juego
         if (ronda < 4) {
             const siguientePalabra = palabrasJuego[sessionAttributes.ronda];
             sessionAttributes.ronda += 1;
